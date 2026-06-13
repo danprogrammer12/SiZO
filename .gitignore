@@ -1,0 +1,39 @@
+# Dependencias
+node_modules/
+functions/node_modules/
+
+# Variables de entorno — NUNCA al repositorio
+.env
+.env.development
+.env.production
+.env.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Service account keys
+*service-account*.json
+*serviceAccount*.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/settings.json
+.idea/
+*.swp
+
+# Archivos de documentación interna (no van al repo)
+SGSST_ERP_Final.html
+dashboard.html
+analisis-ingenieria-inversa.md
+validacion-arquitectura-firestore.txt
+auditoria-firestore-model-v1.1.txt
+auditorias/
+
+# Logs
+*.log

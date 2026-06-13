@@ -1,0 +1,152 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "seguimiento",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "year",      "order": "ASCENDING" },
+        { "fieldPath": "mes",       "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "seguimiento",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId",  "order": "ASCENDING" },
+        { "fieldPath": "year",       "order": "ASCENDING" },
+        { "fieldPath": "completado", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "accidentes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "activo",    "order": "ASCENDING" },
+        { "fieldPath": "fecha",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "accidentes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId",   "order": "ASCENDING" },
+        { "fieldPath": "activo",      "order": "ASCENDING" },
+        { "fieldPath": "investigado", "order": "ASCENDING" },
+        { "fieldPath": "fecha",       "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "acciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "activo",    "order": "ASCENDING" },
+        { "fieldPath": "estado",    "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "acciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId",   "order": "ASCENDING" },
+        { "fieldPath": "activo",      "order": "ASCENDING" },
+        { "fieldPath": "fechaLimite", "order": "ASCENDING" },
+        { "fieldPath": "estado",      "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "acciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "activo",    "order": "ASCENDING" },
+        { "fieldPath": "estado",    "order": "ASCENDING" },
+        { "fieldPath": "prioridad", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ausencias",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId",   "order": "ASCENDING" },
+        { "fieldPath": "activo",      "order": "ASCENDING" },
+        { "fieldPath": "fechaInicio", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ausencias",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId",   "order": "ASCENDING" },
+        { "fieldPath": "activo",      "order": "ASCENDING" },
+        { "fieldPath": "causa",       "order": "ASCENDING" },
+        { "fieldPath": "fechaInicio", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inspecciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "activo",    "order": "ASCENDING" },
+        { "fieldPath": "fecha",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "capacitaciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "activo",    "order": "ASCENDING" },
+        { "fieldPath": "fecha",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "plan_actividades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "year",      "order": "ASCENDING" },
+        { "fieldPath": "mes",       "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "auditorias",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId", "order": "ASCENDING" },
+        { "fieldPath": "activo",    "order": "ASCENDING" },
+        { "fieldPath": "fecha",     "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "casos_medicos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "empresaId",     "order": "ASCENDING" },
+        { "fieldPath": "activo",        "order": "ASCENDING" },
+        { "fieldPath": "estado",        "order": "ASCENDING" },
+        { "fieldPath": "fechaApertura", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "empresas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "asesorId", "order": "ASCENDING" },
+        { "fieldPath": "activa",   "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "empresas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "activa",      "order": "ASCENDING" },
+        { "fieldPath": "contratoFin", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

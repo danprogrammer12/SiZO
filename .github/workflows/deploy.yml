@@ -1,0 +1,45 @@
+name: Deploy SIZO
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    name: Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Instalar dependencias de Functions
+        working-directory: functions
+        run: npm install
+
+      # Deploy a PRODUCCIÓN (canal live) cuando se hace push a main
+      - name: Deploy a producción (main)
+        if: github.ref == 'refs/heads/main'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken:              ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SIZO }}
+          projectId:              sizo-80446
+          channelId:              live
+
+      # Deploy a canal de PREVIEW (staging) cuando se hace push a develop
+      - name: Deploy a preview (develop)
+        if: github.ref == 'refs/heads/develop'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken:              ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SIZO }}
+          projectId:              sizo-80446
+          channelId:              staging
