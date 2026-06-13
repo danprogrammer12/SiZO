@@ -1,0 +1,77 @@
+SIZO — CONTEXTO DE SESIÓN
+Fecha: 2026-06-13
+Estado: Fase 0, 1 y 2 completadas sobre stack Supabase
+
+================================================================================
+RESUMEN DEL PROYECTO
+================================================================================
+
+SIZO — ERP SaaS SG-SST para Colombia. Proyecto personal (ya NO es para Addy Luna).
+Stack: HTML/CSS/JS vanilla + Supabase (Auth + PostgreSQL + RLS + Edge Functions).
+Repo GitHub: https://github.com/danprogrammer12/SiZO
+
+================================================================================
+HITOS COMPLETADOS
+================================================================================
+
+FASE 0-1 — Infraestructura + Auth/Tenancy (Supabase)
+  - Proyecto Supabase: ifqzdrqzjgsdhjbqkbba.supabase.co
+  - Schema PostgreSQL completo: supabase/migrations/001_schema_inicial.sql
+    (16 tablas, RLS multitenant, 15 índices)
+  - Auth con app_metadata { tenant_id, role, empresas_ids } en el JWT
+  - Tenant + ADMIN provisionados (scripts/provision-admin.mjs)
+  - tenant_id actual: 33cca128-a52e-49c8-a1b7-1fa123a6fd5a
+  - ADMIN: danias12.dpa@gmail.com
+  - Login funcionando, bug de botón "cargando" corregido
+
+FASE 2 — Core SG-SST
+  - db.js: capa de datos Supabase (camel↔snake + auditoría automática)
+  - catalogo.js: 20 KPIs con metas/fórmulas/normativa
+  - modules/seguimiento.js: formulario 11 secciones, ID compuesto, upsert
+  - modules/dashboard.js: KPIs+semáforo, gráfica anual, alertas
+  - modules/indicadores.js: tabla KPIs calculados en vivo + motor de cálculo
+  - modules/maestro.js: fichas técnicas
+  - Portados a Supabase: topbar.js, empresas.js, usuarios.js
+  - Eliminado firebase.js
+  - scripts/seed-demo.mjs: 2 empresas + 6 meses demo
+
+================================================================================
+MIGRACIÓN FIREBASE → SUPABASE (importante)
+================================================================================
+
+El proyecto arrancó en Firebase pero se migró a Supabase porque el plan gratuito
+de Firebase (Spark) no cubre Custom Claims ni Storage. Supabase cubre todo gratis.
+Archivos Firebase eliminados o reemplazados. Quedan obsoletos (no se usan):
+  - functions/ (Cloud Functions) → reemplazado por supabase/functions/
+  - firestore-model.md, contexto-sesion-2026-06-07.txt (referencia histórica)
+
+================================================================================
+DATOS DE PRUEBA
+================================================================================
+
+node scripts/seed-demo.mjs
+  - [DEMO] Hotel Mar Azul S.A.S (6 meses Ene-Jun 2026)
+  - [DEMO] Distribuciones Caribe Ltda (sin seguimiento)
+
+================================================================================
+CÓMO LEVANTAR LA APP
+================================================================================
+
+npm run serve   → http://localhost:5000
+Login con danias12.dpa@gmail.com
+
+================================================================================
+DOCUMENTOS CLAVE
+================================================================================
+
+  RUNBOOK-SUPABASE.md       — pasos de setup de Supabase
+  FASE-2-CORE-SGSST.md      — documentación de la Fase 2
+  supabase/migrations/      — schema SQL
+  db.js / catalogo.js       — núcleo de datos e indicadores
+
+================================================================================
+PRÓXIMOS PASOS (Fase 3)
+================================================================================
+
+Módulos operativos (hoy stubs): accidentes, ausentismo, acciones ACPM,
+inspecciones, capacitación, plan de trabajo. Todos sobre db.js + RLS.

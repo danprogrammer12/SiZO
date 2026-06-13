@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SIZO — Plataforma SaaS de gestión SG-SST" />
+  <title>SIZO — SG-SST</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563EB'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='18' font-weight='bold' fill='white'>S</text></svg>" />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/layout.css" />
+  <link rel="stylesheet" href="styles/components.css" />
+  <link rel="stylesheet" href="styles/dark.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== PANTALLA DE AUTH ===== -->
+    <div id="auth-screen">
+      <div class="login-card">
+        <div class="login-logo">
+          <span class="logo-text">SIZ<span class="logo-dot">◉</span></span>
+        </div>
+        <h1 class="login-title">Bienvenido a SIZO</h1>
+        <p class="login-subtitle">Plataforma SaaS de gestión SG-SST</p>
+
+        <form id="login-form" class="login-form" novalidate>
+          <div class="form-group">
+            <label for="login-email">Correo electrónico</label>
+            <div class="input-group">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input type="email" id="login-email" placeholder="correo@empresa.com" autocomplete="email" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <div class="input-group">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required />
+            </div>
+          </div>
+
+          <div id="login-error" class="form-error hidden"></div>
+
+          <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%">
+            <span id="login-btn-text">Iniciar sesión</span>
+            <span id="login-btn-spinner" class="spinner hidden"></span>
+          </button>
+        </form>
+
+        <p class="login-footer">
+          ¿Problemas para acceder? Contacta a tu administrador.
+        </p>
+      </div>
+    </div>
+
+    <!-- ===== APP SHELL (post-login) ===== -->
+    <div id="app-shell" class="hidden">
+
+      <!-- Sidebar -->
+      <nav class="sidebar" id="sidebar">
+        <!-- Contenido inyectado por sidebar.js -->
+      </nav>
+
+      <!-- Main wrapper -->
+      <div class="main-wrapper" id="main-wrapper">
+
+        <!-- Topbar -->
+        <header class="topbar" id="topbar">
+          <!-- Contenido inyectado por topbar.js -->
+        </header>
+
+        <!-- Área de contenido de módulos -->
+        <main class="content" id="content">
+          <!-- Los módulos renderizan aquí via router.js -->
+          <div id="view"></div>
+        </main>
+
+      </div>
+    </div>
+
+    <!-- Modal global -->
+    <div id="modal-root"></div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+  </div>
+
+  <!-- Scripts (ES modules) -->
+  <script type="module" src="supabase.js"></script>
+  <script type="module" src="store.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module" src="router.js"></script>
+  <script type="module" src="components/sidebar.js"></script>
+  <script type="module" src="components/topbar.js"></script>
+  <script type="module" src="components/modal.js"></script>
+  <script type="module" src="components/toast.js"></script>
+
+  <!-- Estilos inline del login (self-contained para no depender del layout post-auth) -->
+  <style>
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background-color: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo-text {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #F8FAFC;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-dot {
+      color: #2563EB;
+    }
+
+    .login-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #F8FAFC;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+      font-size: 0.875rem;
+      color: #94A3B8;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-form .form-group label {
+      color: #CBD5E1;
+    }
+
+    .login-form input {
+      background-color: #0F172A;
+      border-color: #334155;
+      color: #F8FAFC;
+    }
+
+    .login-form input:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px #1E3A5F;
+    }
+
+    .login-form input::placeholder {
+      color: #475569;
+    }
+
+    .login-footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #64748B;
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,81 @@
+/* ============================================================
+   SIZO — Dark Mode CSS
+   Se activa con clase .dark en <html>
+   ============================================================ */
+
+.dark {
+  --color-brand:        #3B82F6;
+  --color-brand-dark:   #2563EB;
+  --color-brand-light:  #60A5FA;
+  --color-brand-muted:  #1E3A5F;
+
+  --color-bg:           #0F172A;
+  --color-surface:      #1E293B;
+  --color-surface-2:    #334155;
+  --color-border:       #334155;
+  --color-border-soft:  #1E293B;
+
+  --color-text-primary:   #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted:     #64748B;
+  --color-text-inverse:   #0F172A;
+
+  --color-success-muted:  #14532D;
+  --color-warning-muted:  #451A03;
+  --color-danger-muted:   #450A0A;
+  --color-info-muted:     #083344;
+
+  /* Topbar en dark */
+  --topbar-bg:     #1E293B;
+  --topbar-border: #334155;
+}
+
+/* Sidebar siempre dark — no cambia */
+
+.dark .semaforo-pill.verde    { background-color: #14532D; color: #86EFAC; }
+.dark .semaforo-pill.amarillo { background-color: #451A03; color: #FCD34D; }
+.dark .semaforo-pill.naranja  { background-color: #431407; color: #FB923C; }
+.dark .semaforo-pill.rojo     { background-color: #450A0A; color: #FCA5A5; }
+
+.dark .alert-success {
+  background-color: #14532D;
+  border-color: #166534;
+  color: #86EFAC;
+}
+.dark .alert-warning {
+  background-color: #451A03;
+  border-color: #78350F;
+  color: #FCD34D;
+}
+.dark .alert-danger {
+  background-color: #450A0A;
+  border-color: #7F1D1D;
+  color: #FCA5A5;
+}
+.dark .alert-info {
+  background-color: #083344;
+  border-color: #0E7490;
+  color: #67E8F9;
+}
+
+.dark .data-table th {
+  background-color: #1E293B;
+}
+.dark .data-table tbody tr:hover td {
+  background-color: #334155;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--color-surface-2);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-muted);
+}
