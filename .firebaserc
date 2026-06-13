@@ -1,8 +1,0 @@
-{
-  "projects": {
-    "default": "sizo-80446",
-    "prod":    "sizo-80446"
-  },
-  "targets": {},
-  "etags": {}
-}
