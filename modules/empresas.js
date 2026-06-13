@@ -1,11 +1,7 @@
-import { db }            from '../firebase.js'
-import { get }           from '../store.js'
-import modal             from '../components/modal.js'
-import toast             from '../components/toast.js'
-import {
-  collection, doc, addDoc, updateDoc, getDocs,
-  query, where, orderBy, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
+import db              from '../db.js'
+import { get }         from '../store.js'
+import modal           from '../components/modal.js'
+import toast           from '../components/toast.js'
 
 // ── Nivel Res. 0312 calculado (no se almacena) ────────────────
 function nivelRes0312(trab, nivelRiesgo) {
@@ -73,10 +69,7 @@ async function cargarEmpresas() {
   if (!wrap) return
 
   try {
-    const col  = collection(db, 'tenants', user.tenantId, 'empresas')
-    const q    = query(col, where('activa', '==', true), orderBy('nombre'))
-    const snap = await getDocs(q)
-    _empresas  = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    _empresas = await db.list('empresas', { eq: { activa: true }, order: 'nombre' })
     renderTabla(_empresas)
   } catch (err) {
     console.error(err)
@@ -378,39 +371,14 @@ async function guardar(empresaActual) {
     repLegal:       data.repLegal?.trim() || null,
     respSst:        data.respSst?.trim() || null,
     obs:            data.obs?.trim() || null,
-    updatedAt:      serverTimestamp(),
-    updatedBy:      user.uid,
   }
 
   try {
-    const col = collection(db, 'tenants', user.tenantId, 'empresas')
-
     if (empresaActual) {
-      await updateDoc(doc(col, empresaActual.id), payload)
+      await db.update('empresas', empresaActual.id, payload)
       toast.success(`Empresa "${payload.nombre}" actualizada`)
     } else {
-      await addDoc(col, {
-        ...payload,
-        asesorId:      null,
-        activa:        true,
-        centros:       [],
-        ciiu:          null,
-        actividad:     null,
-        codArl:        null,
-        descArl:       null,
-        tel1:          null,
-        tel2:          null,
-        email1:        null,
-        email2:        null,
-        bdayRep:       null,
-        respAdmin:     null,
-        bdaySst:       null,
-        frecuencia:    null,
-        fechaInicioSst: null,
-        creadoEn:      serverTimestamp(),
-        creadoPor:     user.uid,
-        deletedAt:     null,
-      })
+      await db.insert('empresas', { ...payload, activa: true, centros: [] })
       toast.success(`Empresa "${payload.nombre}" creada`)
     }
 

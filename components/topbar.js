@@ -1,8 +1,5 @@
-import { auth, db }        from '../firebase.js'
 import { get, set, subscribe } from '../store.js'
-import {
-  collection, query, where, orderBy, getDocs
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
+import db from '../db.js'
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
@@ -90,11 +87,7 @@ function syncPeriodo() {
 async function cargarEmpresas(user) {
   if (!user?.tenantId) return
   try {
-    const col = collection(db, 'tenants', user.tenantId, 'empresas')
-    const q   = query(col, where('activa', '==', true), orderBy('nombre'))
-    const snap = await getDocs(q)
-
-    const todas = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    const todas = await db.list('empresas', { eq: { activa: true }, order: 'nombre' })
     const empresas = user.rol === 'ADMIN'
       ? todas
       : todas.filter(em => (user.empresas || []).includes(em.id))

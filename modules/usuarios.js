@@ -1,11 +1,7 @@
-import { auth, db }      from '../firebase.js'
-import { get }           from '../store.js'
-import modal             from '../components/modal.js'
-import toast             from '../components/toast.js'
-import {
-  collection, doc, getDocs, updateDoc,
-  query, orderBy, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'
+import db              from '../db.js'
+import { get }         from '../store.js'
+import modal           from '../components/modal.js'
+import toast           from '../components/toast.js'
 
 const ROL_LABELS = { ADMIN: 'Administrador', ASESOR: 'Asesor SST', CONSULTA: 'Consulta' }
 const ROL_BADGE  = { ADMIN: 'badge-danger', ASESOR: 'badge-brand', CONSULTA: 'badge-neutral' }
@@ -46,9 +42,8 @@ async function render(container) {
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
-      <span>Crear y desactivar usuarios requiere <strong>Cloud Functions (plan Blaze)</strong>.
-      Por ahora puedes ver y editar permisos de usuarios existentes.
-      Para crear el primer usuario ADMIN, usa la <strong>Consola de Firebase → Authentication</strong>.</span>
+      <span>Crear nuevos usuarios requiere el <strong>script de provisión</strong> (service role).
+      Aquí puedes ver y editar el perfil de los usuarios existentes.</span>
     </div>
 
     <div id="usuarios-tabla-wrap">
@@ -70,10 +65,7 @@ async function cargarUsuarios() {
   if (!wrap) return
 
   try {
-    const col  = collection(db, 'tenants', user.tenantId, 'usuarios')
-    const q    = query(col, orderBy('nombre'))
-    const snap = await getDocs(q)
-    _usuarios  = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    _usuarios = await db.list('usuarios', { order: 'nombre' })
     renderTabla(_usuarios)
   } catch (err) {
     console.error(err)
@@ -90,7 +82,7 @@ function renderTabla(lista) {
       <div class="empty-state">
         <div class="empty-state-icon">👥</div>
         <h3 class="empty-state-title">Sin usuarios</h3>
-        <p class="text-muted">Crea el primer usuario desde la Consola de Firebase</p>
+        <p class="text-muted">Crea el primer usuario desde Supabase → Authentication</p>
       </div>`
     return
   }
@@ -115,7 +107,7 @@ function renderTabla(lista) {
               ? '<span class="badge badge-success">Activo</span>'
               : '<span class="badge badge-neutral">Inactivo</span>'
             const acceso = u.ultimoAcceso
-              ? new Date(u.ultimoAcceso.seconds * 1000).toLocaleDateString('es-CO')
+              ? new Date(u.ultimoAcceso).toLocaleDateString('es-CO')
               : '—'
             return `
               <tr>
@@ -171,8 +163,8 @@ function abrirFormularioEdicion(usuario) {
   const content = `
     <form id="form-usuario" novalidate>
       <div class="alert alert-info" style="margin-bottom:var(--space-4)">
-        <span>Cambiar rol o empresas asignadas requiere Cloud Functions.
-        Aquí puedes editar los datos de perfil del usuario.</span>
+        <span>Cambiar rol o empresas asignadas requiere el script de provisión
+        (actualiza el app_metadata del JWT). Aquí puedes editar los datos de perfil.</span>
       </div>
 
       <div class="form-row">
@@ -204,7 +196,7 @@ function abrirFormularioEdicion(usuario) {
       <div class="form-group">
         <label>Rol actual</label>
         <input value="${ROL_LABELS[usuario.rol] || usuario.rol}" disabled style="opacity:.6;cursor:not-allowed" />
-        <p class="form-hint">Cambiar rol requiere Cloud Functions (plan Blaze)</p>
+        <p class="form-hint">Cambiar rol requiere el script de provisión (service role)</p>
       </div>
 
       <div id="form-usuario-error" class="form-error hidden"></div>
@@ -237,15 +229,12 @@ async function guardarUsuario(usuario) {
   btn.textContent = 'Guardando...'
 
   try {
-    const ref = doc(db, 'tenants', user.tenantId, 'usuarios', usuario.uid)
-    await updateDoc(ref, {
+    await db.update('usuarios', usuario.uid, {
       nombre:    data.nombre?.trim() || usuario.nombre,
       tel:       data.tel?.trim() || null,
       ciudad:    data.ciudad?.trim() || null,
       bday:      data.bday || null,
       linkedin:  data.linkedin?.trim() || null,
-      updatedAt: serverTimestamp(),
-      updatedBy: user.uid,
     })
     toast.success('Usuario actualizado')
     modal.close()
@@ -265,33 +254,32 @@ function mostrarInfoCreacion() {
     size:  'md',
     content: `
       <p style="margin-bottom:var(--space-4)">
-        Crear usuarios requiere <strong>Cloud Functions</strong>, disponibles con el plan Blaze de Firebase.
+        Crear usuarios requiere privilegios de <strong>service role</strong>, por lo que se hace
+        mediante el script de provisión (no desde el navegador, por seguridad).
       </p>
       <p style="margin-bottom:var(--space-4)">
-        <strong>Alternativa para desarrollo (plan Spark):</strong>
+        <strong>Pasos:</strong>
       </p>
       <ol style="padding-left:var(--space-5);display:flex;flex-direction:column;gap:var(--space-3)">
         <li class="text-sm">
-          Ve a <strong>Consola Firebase → Authentication → Users → Add user</strong>
-          y crea el usuario con email y contraseña.
+          Ve a <strong>Supabase → Authentication → Users → Invite user</strong>
+          e invita al usuario por correo.
         </li>
         <li class="text-sm">
-          Copia el UID generado.
+          El usuario acepta la invitación y define su contraseña.
         </li>
         <li class="text-sm">
-          En <strong>Firestore → tenants → {tenantId} → usuarios</strong>, crea un documento
-          con ese UID como ID y los campos: <code>uid, nombre, email, rol, activo: true,
-          empresasIds: [], creadoEn, creadoPor, updatedAt, updatedBy, deletedAt: null</code>.
+          Ejecuta el script de provisión para asignarle <code>tenant_id</code>, <code>role</code>
+          y <code>empresas_ids</code> en su <strong>app_metadata</strong> y crear su fila en
+          la tabla <code>usuarios</code>.
         </li>
         <li class="text-sm">
-          Para que el usuario vea sus datos correctos, los <strong>Custom Claims</strong>
-          (tenantId, role, empresasIds) deben setearse vía Admin SDK o Cloud Functions.
-          Sin ellos, el login tendrá acceso limitado hasta que estén configurados.
+          El usuario cierra y reabre sesión para que el JWT recoja los nuevos datos.
         </li>
       </ol>
-      <div class="alert alert-warning" style="margin-top:var(--space-5)">
-        Al activar el plan Blaze, la función <code>createUser</code> ya está implementada
-        en <code>functions/index.js</code> y se desplegará automáticamente.
+      <div class="alert alert-info" style="margin-top:var(--space-5)">
+        Más adelante esto se automatiza con una <strong>Edge Function</strong>
+        (<code>supabase/functions/crear-tenant</code>) invocada desde un panel de administración.
       </div>
     `,
     footer: '<button class="btn btn-primary" id="btn-cerrar-info">Entendido</button>',
