@@ -1,20 +1,34 @@
 // SIZO — Inspecciones (Fase 3)
-import { get } from '../store.js'
+import { crearModulo, fmtFecha, badge } from './_crud.js'
 
-async function render(container) {
-  container.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">Inspecciones</h2>
-        <p class="page-subtitle">Inspecciones planeadas y no planeadas de seguridad</p>
-      </div>
-    </div>
-    <div class="empty-state">
-      <div class="empty-state-icon">🔍</div>
-      <h3 class="empty-state-title">Módulo en construcción</h3>
-      <p class="text-muted">Disponible en Fase 3 — Módulos Operativos</p>
-    </div>
-  `
-}
+const { render } = crearModulo({
+  tabla: 'inspecciones',
+  titulo: 'Inspecciones',
+  subtitulo: 'Inspecciones planeadas y no planeadas de seguridad',
+  icono: '🔍',
+  labelNuevo: 'Nueva inspección',
+  ordenPor: 'fecha',
+  columnas: [
+    { key: 'fecha', label: 'Fecha', format: fmtFecha },
+    { key: 'area', label: 'Área' },
+    { key: 'inspector', label: 'Inspector' },
+    { key: 'tipo', label: 'Tipo', format: v => badge(v === 'planeada' ? 'Planeada' : 'No planeada',
+        { Planeada: 'badge-brand', 'No planeada': 'badge-warning' }) },
+    { key: 'calificacion', label: 'Calificación', format: v => v != null ? `${v}/100` : '—' },
+  ],
+  campos: [
+    { key: 'fecha', label: 'Fecha', type: 'date', required: true },
+    { key: 'area', label: 'Área inspeccionada', type: 'text', required: true },
+    { key: 'inspector', label: 'Inspector', type: 'text', required: true },
+    { key: 'tipo', label: 'Tipo', type: 'select', required: true, default: 'planeada', options: [
+      { value: 'planeada', label: 'Planeada' }, { value: 'no_planeada', label: 'No planeada' } ] },
+    { key: 'calificacion', label: 'Calificación (0-100)', type: 'number', min: 0, default: 0 },
+    { key: 'obs', label: 'Hallazgos y observaciones', type: 'textarea', ancho: 'full' },
+  ],
+  antesDeGuardar: (payload) => {
+    // hallazgos detallados se modelan como jsonb; v1 guarda arreglo vacío
+    if (payload.hallazgos == null) payload.hallazgos = []
+  },
+})
 
 export { render }
