@@ -5,6 +5,8 @@ import { get, subscribe } from '../store.js'
 import { calcularIndicadores, semaforo } from './indicadores.js'
 import { CATALOGO, DESTACADOS, ficha }   from '../catalogo.js'
 import { lineChart }      from '../components/chart.js'
+import { esc }            from '../escape.js'
+import { errorUsuario }   from '../errores.js'
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const COLOR_SEM = { verde:'#22C55E', amarillo:'#F59E0B', naranja:'#FB923C', rojo:'#EF4444', neutral:'#94A3B8' }
@@ -43,7 +45,7 @@ async function pintar_(root) {
   root.innerHTML = `
     <div class="page-header"><div>
       <h2 class="page-title">Dashboard Ejecutivo</h2>
-      <p class="page-subtitle">${empresa.nombre} — ${MESES[month - 1]} ${year}</p>
+      <p class="page-subtitle">${esc(empresa.nombre)} — ${MESES[month - 1]} ${year}</p>
     </div></div>
     <div id="dash-body">
       <div style="text-align:center;padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>
@@ -54,7 +56,7 @@ async function pintar_(root) {
     meses = await db.list('seguimiento', { eq: { empresaId: empresa.id, year }, order: 'mes' })
   } catch (err) {
     document.getElementById('dash-body').innerHTML =
-      `<div class="alert alert-danger">Error al cargar datos: ${err.message}</div>`
+      `<div class="alert alert-danger">${errorUsuario(err, 'cargar dashboard')}</div>`
     return
   }
 

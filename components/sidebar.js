@@ -1,6 +1,7 @@
 import { get, set, subscribe } from '../store.js'
 import { navigate } from '../router.js'
 import { logout } from '../auth.js'
+import { esc } from '../escape.js'
 
 const NAV_ITEMS = [
   { route: 'dashboard',   label: 'Dashboard',       icon: icon_dashboard },
@@ -100,8 +101,8 @@ function syncUser() {
     if (!avatarEl || !infoEl) return
     avatarEl.textContent = (user.nombre || user.email || '?')[0].toUpperCase()
     infoEl.innerHTML = `
-      <span class="sidebar-user-name">${user.nombre || user.email}</span>
-      <span class="sidebar-user-role">${user.rol || ''}</span>
+      <span class="sidebar-user-name">${esc(user.nombre || user.email)}</span>
+      <span class="sidebar-user-role">${esc(user.rol || '')}</span>
     `
   })
 }

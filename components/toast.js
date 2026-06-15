@@ -2,6 +2,7 @@
 // SIZO — Toast notifications
 // Uso: toast.success('Mensaje') | toast.error('...') | toast.warning('...')
 // ─────────────────────────────────────────────────────────────
+import { esc } from '../escape.js'
 
 const DURACION = 4000
 
@@ -19,7 +20,7 @@ function show(message, type = 'info') {
   toast.className = `toast toast-${type}`
   toast.innerHTML = `
     <span class="toast-icon">${iconMap[type] || iconMap.info}</span>
-    <span class="toast-message">${message}</span>
+    <span class="toast-message">${esc(message)}</span>
     <button class="toast-close" aria-label="Cerrar">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

@@ -3,6 +3,8 @@
 import db                 from '../db.js'
 import { get, subscribe } from '../store.js'
 import { CATALOGO, ficha } from '../catalogo.js'
+import { esc }            from '../escape.js'
+import { errorUsuario }   from '../errores.js'
 
 /**
  * @param {object} seg  — documento de seguimiento mensual
@@ -161,7 +163,7 @@ async function pintar_(root) {
   const header = `
     <div class="page-header"><div>
       <h2 class="page-title">Indicadores SG-SST</h2>
-      <p class="page-subtitle">${empresa ? `${empresa.nombre} — ${MESES[periodo.month - 1]} ${periodo.year}` : 'Fichas técnicas y valores calculados'}</p>
+      <p class="page-subtitle">${empresa ? `${esc(empresa.nombre)} — ${MESES[periodo.month - 1]} ${periodo.year}` : 'Fichas técnicas y valores calculados'}</p>
     </div></div>`
 
   if (!empresa) {
@@ -179,7 +181,7 @@ async function pintar_(root) {
   const segId = `${empresa.id}_${periodo.year}_${periodo.month}`
   let seg = null
   try { seg = await db.getById('seguimiento', segId) } catch (err) {
-    document.getElementById('ind-body').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`
+    document.getElementById('ind-body').innerHTML = `<div class="alert alert-danger">${errorUsuario(err, 'cargar indicadores')}</div>`
     return
   }
 

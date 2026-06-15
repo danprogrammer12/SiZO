@@ -1,7 +1,10 @@
 // ─────────────────────────────────────────────────────────────
 // SIZO — Modal component
 // Uso: modal.open({ title, content, footer, size, onClose })
+// Nota: `title` se escapa (texto); `content` y `footer` son HTML por diseño,
+// quien los construye es responsable de escapar los datos que inserte.
 // ─────────────────────────────────────────────────────────────
+import { esc } from '../escape.js'
 
 let activeModal = null
 
@@ -15,7 +18,7 @@ function open({ title = '', content = '', footer = '', size = 'md', onClose } = 
   el.innerHTML = `
     <div class="modal-box" style="max-width:${sizeMap[size] || sizeMap.md}" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <h3 class="modal-title">${title}</h3>
+        <h3 class="modal-title">${esc(title)}</h3>
         <button class="btn-ghost btn-icon modal-close" id="modal-close-btn" aria-label="Cerrar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

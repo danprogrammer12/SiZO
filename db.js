@@ -5,24 +5,9 @@
 // garantizan el aislamiento por tenant; aquí solo se inyectan
 // tenant_id y los campos de auditoría en escrituras.
 // ─────────────────────────────────────────────────────────────
-import { supabase } from './supabase.js'
-import { get }      from './store.js'
-
-const toSnake = s => s.replace(/[A-Z]/g, m => '_' + m.toLowerCase())
-const toCamel = s => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
-
-function keysTo(fn, obj) {
-  if (Array.isArray(obj)) return obj.map(o => keysTo(fn, o))
-  if (obj && typeof obj === 'object' && !(obj instanceof Date)) {
-    const out = {}
-    for (const k in obj) out[fn(k)] = obj[k]
-    return out
-  }
-  return obj
-}
-
-const toRow = obj => keysTo(toSnake, obj)
-const fromRow = obj => keysTo(toCamel, obj)
+import { supabase }            from './supabase.js'
+import { get }                 from './store.js'
+import { toSnake, toRow, fromRow } from './case-convert.js'
 
 function ctx() {
   const user = get('user') || {}

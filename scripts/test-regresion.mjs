@@ -1,6 +1,10 @@
-// SIZO — Pruebas de regresión (Fases 0-3)
+// SIZO — Pruebas de regresión de MECÁNICA (Fases 0-3)
 // Ejecuta 3 pruebas contra Supabase y reporta PASS/FAIL.
-//   node scripts/test-regresion.mjs
+//   node scripts/test-regresion.mjs       (o: npm run test:mecanica)
+//
+// ⚠️ ALCANCE: estas pruebas usan service_role, que SALTA la RLS. Validan
+// la mecánica CRUD y el cálculo de indicadores, NO la autorización por rol.
+// La validación de RLS/roles vive en scripts/test-seguridad-rls.mjs (H2).
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 

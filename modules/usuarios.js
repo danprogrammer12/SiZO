@@ -2,6 +2,8 @@ import db              from '../db.js'
 import { get }         from '../store.js'
 import modal           from '../components/modal.js'
 import toast           from '../components/toast.js'
+import { esc }         from '../escape.js'
+import { errorUsuario } from '../errores.js'
 
 const ROL_LABELS = { ADMIN: 'Administrador', ASESOR: 'Asesor SST', CONSULTA: 'Consulta' }
 const ROL_BADGE  = { ADMIN: 'badge-danger', ASESOR: 'badge-brand', CONSULTA: 'badge-neutral' }
@@ -68,8 +70,7 @@ async function cargarUsuarios() {
     _usuarios = await db.list('usuarios', { order: 'nombre' })
     renderTabla(_usuarios)
   } catch (err) {
-    console.error(err)
-    wrap.innerHTML = `<div class="alert alert-danger">Error al cargar usuarios: ${err.message}</div>`
+    wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, 'cargar usuarios')}</div>`
   }
 }
 
@@ -116,13 +117,13 @@ function renderTabla(lista) {
                     <div style="width:32px;height:32px;border-radius:50%;background:var(--color-brand);
                       color:#fff;display:flex;align-items:center;justify-content:center;
                       font-weight:700;font-size:var(--font-size-sm);flex-shrink:0">
-                      ${(u.nombre || u.email || '?')[0].toUpperCase()}
+                      ${esc((u.nombre || u.email || '?')[0].toUpperCase())}
                     </div>
-                    <span style="font-weight:500">${u.nombre || '—'}</span>
+                    <span style="font-weight:500">${esc(u.nombre || '—')}</span>
                   </div>
                 </td>
-                <td class="text-sm">${u.email}</td>
-                <td><span class="badge ${ROL_BADGE[u.rol] || 'badge-neutral'}">${ROL_LABELS[u.rol] || u.rol}</span></td>
+                <td class="text-sm">${esc(u.email)}</td>
+                <td><span class="badge ${ROL_BADGE[u.rol] || 'badge-neutral'}">${esc(ROL_LABELS[u.rol] || u.rol)}</span></td>
                 <td class="text-sm">
                   ${u.rol === 'ADMIN'
                     ? '<span class="text-muted">Todas</span>'
@@ -133,7 +134,7 @@ function renderTabla(lista) {
                 <td>${estado}</td>
                 <td class="text-sm">${acceso}</td>
                 <td>
-                  <button class="btn btn-ghost btn-sm btn-editar-usuario" data-uid="${u.uid}" title="Editar">
+                  <button class="btn btn-ghost btn-sm btn-editar-usuario" data-uid="${esc(u.uid)}" title="Editar">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -170,32 +171,32 @@ function abrirFormularioEdicion(usuario) {
       <div class="form-row">
         <div class="form-group">
           <label>Nombre completo</label>
-          <input name="nombre" value="${usuario.nombre || ''}" />
+          <input name="nombre" value="${esc(usuario.nombre || '')}" />
         </div>
         <div class="form-group">
           <label>Teléfono</label>
-          <input name="tel" value="${usuario.tel || ''}" />
+          <input name="tel" value="${esc(usuario.tel || '')}" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Ciudad</label>
-          <input name="ciudad" value="${usuario.ciudad || ''}" />
+          <input name="ciudad" value="${esc(usuario.ciudad || '')}" />
         </div>
         <div class="form-group">
           <label>Fecha de nacimiento</label>
-          <input name="bday" type="date" value="${usuario.bday || ''}" />
+          <input name="bday" type="date" value="${esc(usuario.bday || '')}" />
         </div>
       </div>
       <div class="form-group">
         <label>LinkedIn</label>
-        <input name="linkedin" value="${usuario.linkedin || ''}" placeholder="https://linkedin.com/in/..." />
+        <input name="linkedin" value="${esc(usuario.linkedin || '')}" placeholder="https://linkedin.com/in/..." />
       </div>
 
       <div class="divider"></div>
       <div class="form-group">
         <label>Rol actual</label>
-        <input value="${ROL_LABELS[usuario.rol] || usuario.rol}" disabled style="opacity:.6;cursor:not-allowed" />
+        <input value="${esc(ROL_LABELS[usuario.rol] || usuario.rol)}" disabled style="opacity:.6;cursor:not-allowed" />
         <p class="form-hint">Cambiar rol requiere el script de provisión (service role)</p>
       </div>
 
@@ -240,8 +241,7 @@ async function guardarUsuario(usuario) {
     modal.close()
     await cargarUsuarios()
   } catch (err) {
-    console.error(err)
-    errEl.textContent = `Error: ${err.message}`
+    errEl.textContent = errorUsuario(err, 'guardar usuario')
     errEl.classList.remove('hidden')
     btn.disabled    = false
     btn.textContent = 'Guardar cambios'

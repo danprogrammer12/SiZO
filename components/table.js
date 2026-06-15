@@ -2,6 +2,7 @@
 // SIZO — Data table component
 // Uso: table.render(container, { columns, rows, onAction })
 // ─────────────────────────────────────────────────────────────
+import { esc } from '../escape.js'
 
 function render(container, { columns = [], rows = [], emptyMsg = 'Sin registros', onAction } = {}) {
   if (!container) return
@@ -55,11 +56,11 @@ function renderCell(col, row, rowIdx) {
 
   if (col.type === 'semaforo') {
     const clase = semaforo(parseFloat(value))
-    return `<span class="semaforo-pill ${clase}">${value ?? '—'}%</span>`
+    return `<span class="semaforo-pill ${clase}">${esc(value ?? '—')}%</span>`
   }
 
   if (col.type === 'badge') {
-    return `<span class="badge badge-${col.color || 'neutral'}">${value ?? '—'}</span>`
+    return `<span class="badge badge-${col.color || 'neutral'}">${esc(value ?? '—')}</span>`
   }
 
   if (col.type === 'progress') {
@@ -81,7 +82,7 @@ function renderCell(col, row, rowIdx) {
       </button>`).join('')
   }
 
-  return value ?? '—'
+  return esc(value ?? '—')
 }
 
 function semaforo(pct) {
