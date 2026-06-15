@@ -1,6 +1,6 @@
 # Dependencias
 node_modules/
-functions/node_modules/
+docs/historico/functions/node_modules/
 
 # Variables de entorno — NUNCA al repositorio
 .env
@@ -28,12 +28,12 @@ Thumbs.db
 *.swp
 
 # Archivos de documentación interna (no van al repo)
-SGSST_ERP_Final.html
-dashboard.html
-analisis-ingenieria-inversa.md
-validacion-arquitectura-firestore.txt
-auditoria-firestore-model-v1.1.txt
-auditorias/
+docs/historico/SGSST_ERP_Final.html
+docs/historico/dashboard.html
+docs/historico/analisis-ingenieria-inversa.md
+docs/historico/validacion-arquitectura-firestore.txt
+docs/historico/auditoria-firestore-model-v1.1.txt
+docs/historico/auditorias/
 
 # Logs
 *.log
