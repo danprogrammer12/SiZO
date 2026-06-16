@@ -25,7 +25,7 @@ Hay **2 hallazgos críticos y 5 graves** a resolver antes de crecer o salir a pr
 | H5 | `err.message` renderizado como HTML → fuga de internals + vector XSS | 2,5 | 🟠 Grave — ✅ RESUELTO 2026-06-15 |
 | H6 | `supabase-js` desde CDN `esm.sh` sin pin ni SRI (cadena de suministro) | 2 | 🟠 Grave — ✅ RESUELTO 2026-06-15 |
 | H7 | Sin Content-Security-Policy ni headers de seguridad | 2 | 🟠 Grave — ✅ RESUELTO 2026-06-15 |
-| H8 | Sin paginación + `select('*')` en todas las listas | 1,4 | 🟡 Medio |
+| H8 | Sin paginación + `select('*')` en todas las listas | 1,4 | ✅ Resuelto (parcial) |
 | H9 | `empresas_ids`/`role` del JWT desincronizable de la tabla (authz obsoleta) | 2 | 🟡 Medio |
 | H10 | Funciones RLS evaluadas por fila (`user_empresas()` con subquery) | 4 | 🟡 Medio |
 | H11 | Test de indicadores reimplementa la fórmula en vez de importar el motor | 6 | 🟡 Medio |
@@ -262,3 +262,19 @@ Para `X-Frame-Options`/`nosniff`/HSTS/`frame-ancestors` reales en prod, configur
 
 **Pendiente de confirmación manual:** recargar en el navegador y revisar la consola: no debe
 haber violaciones de CSP que rompan login, carga de datos (Supabase) ni fuentes.
+
+### H8 — Sin paginación, `select('*')` en todas las listas — ✅ RESUELTO (parcial) (2026-06-16)
+
+**Fix aplicado:**
+- `db.js`: `list()` ahora acepta `limit` (default **500**) y aplica `.limit()` en la query
+  de Supabase. Al ser un parámetro con valor por defecto, todos los call sites existentes
+  (`empresas.js`, `usuarios.js`, `dashboard.js`, `topbar.js`, `modules/_crud.js`) quedan
+  protegidos automáticamente sin tocarlos; pueden pasar `limit` explícito si alguna lista
+  necesita más en el futuro.
+- **Alcance:** se decidió cubrir solo el techo de filas (`.limit()`), no reemplazar
+  `select('*')` por columnas explícitas — eso requeriría revisar caso por caso qué columnas
+  usa cada módulo, con mayor riesgo de omitir una y romper la UI, para un beneficio menor
+  (cosmético/performance) frente al riesgo real ("traer todo sin techo").
+
+**Verificación:** `npm test` → **24 PASS · 0 FAIL** (unit H4, regresión mecánica, seguridad
+RLS) — el cambio no alteró el comportamiento de ningún listado probado.

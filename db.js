@@ -14,11 +14,14 @@ function ctx() {
   return { tenantId: user.tenantId, uid: user.uid }
 }
 
+const LIMITE_LISTA_DEFAULT = 500
+
 // ── Lectura ──────────────────────────────────────────────────
-async function list(table, { eq = {}, order, ascending = true } = {}) {
+async function list(table, { eq = {}, order, ascending = true, limit = LIMITE_LISTA_DEFAULT } = {}) {
   let q = supabase.from(table).select('*')
   for (const [col, val] of Object.entries(eq)) q = q.eq(toSnake(col), val)
   if (order) q = q.order(toSnake(order), { ascending })
+  if (limit) q = q.limit(limit)
   const { data, error } = await q
   if (error) throw new Error(error.message)
   return fromRow(data)
