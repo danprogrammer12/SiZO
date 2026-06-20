@@ -48,7 +48,11 @@ function render() {
 
 function bindEvents() {
   document.getElementById('topbar-menu').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('mobile-open')
+    toggleSidebar()
+  })
+
+  document.getElementById('sidebar-overlay').addEventListener('click', () => {
+    closeSidebar()
   })
 
   document.getElementById('topbar-dark').addEventListener('click', () => {
@@ -63,6 +67,18 @@ function bindEvents() {
 
   document.getElementById('periodo-prev').addEventListener('click', () => cambiarPeriodo(-1))
   document.getElementById('periodo-next').addEventListener('click', () => cambiarPeriodo(1))
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar')
+  const overlay = document.getElementById('sidebar-overlay')
+  const open = sidebar.classList.toggle('mobile-open')
+  overlay.classList.toggle('visible', open)
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open')
+  document.getElementById('sidebar-overlay').classList.remove('visible')
 }
 
 function cambiarPeriodo(delta) {

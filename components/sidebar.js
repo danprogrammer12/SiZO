@@ -85,7 +85,16 @@ function bindEvents() {
 
   document.getElementById('sidebar-nav').addEventListener('click', e => {
     const btn = e.target.closest('.nav-item')
-    if (btn) navigate(btn.dataset.route)
+    if (!btn) return
+    navigate(btn.dataset.route)
+    // Cierra el drawer en mobile al navegar
+    document.getElementById('sidebar').classList.remove('mobile-open')
+    const overlay = document.getElementById('sidebar-overlay')
+    if (overlay) overlay.classList.remove('visible')
+  })
+
+  document.getElementById('sidebar-user').addEventListener('click', () => {
+    navigate('perfil')
   })
 
   document.getElementById('sidebar-logout').addEventListener('click', async () => {
