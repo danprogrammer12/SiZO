@@ -32,39 +32,35 @@
 
 /* Sidebar siempre dark — no cambia */
 
+/* ── Semáforo pills ── */
 .dark .semaforo-pill.verde    { background-color: #14532D; color: #86EFAC; }
 .dark .semaforo-pill.amarillo { background-color: #451A03; color: #FCD34D; }
 .dark .semaforo-pill.naranja  { background-color: #431407; color: #FB923C; }
 .dark .semaforo-pill.rojo     { background-color: #450A0A; color: #FCA5A5; }
 
-.dark .alert-success {
-  background-color: #14532D;
-  border-color: #166534;
-  color: #86EFAC;
-}
-.dark .alert-warning {
-  background-color: #451A03;
-  border-color: #78350F;
-  color: #FCD34D;
-}
-.dark .alert-danger {
-  background-color: #450A0A;
-  border-color: #7F1D1D;
-  color: #FCA5A5;
-}
-.dark .alert-info {
-  background-color: #083344;
-  border-color: #0E7490;
-  color: #67E8F9;
-}
+/* ── Badges de estado ── */
+.dark .badge-success { background-color: #14532D; color: #86EFAC; }
+.dark .badge-warning { background-color: #451A03; color: #FCD34D; }
+.dark .badge-danger  { background-color: #450A0A; color: #FCA5A5; }
+.dark .badge-info    { background-color: #083344; color: #67E8F9; }
 
-.dark .data-table th {
-  background-color: #1E293B;
-}
-.dark .data-table tbody tr:hover td {
-  background-color: #334155;
-}
+/* ── Alertas ── */
+.dark .alert-success { background-color: #14532D; border-color: #166534; color: #86EFAC; }
+.dark .alert-warning { background-color: #451A03; border-color: #78350F; color: #FCD34D; }
+.dark .alert-danger  { background-color: #450A0A; border-color: #7F1D1D; color: #FCA5A5; }
+.dark .alert-info    { background-color: #083344; border-color: #0E7490; color: #67E8F9; }
 
+/* ── Toasts ── */
+.dark .toast-success { background: #14532D; color: #86EFAC; border-color: #166534; }
+.dark .toast-error   { background: #450A0A; color: #FCA5A5; border-color: #7F1D1D; }
+.dark .toast-warning { background: #451A03; color: #FCD34D; border-color: #78350F; }
+.dark .toast-info    { background: #083344; color: #67E8F9; border-color: #0E7490; }
+
+/* ── Tablas ── */
+.dark .data-table th              { background-color: #1E293B; color: var(--color-text-secondary); }
+.dark .data-table tbody tr:hover td { background-color: #334155; }
+
+/* ── Formularios ── */
 .dark input,
 .dark textarea,
 .dark select {
@@ -72,10 +68,43 @@
   color: var(--color-text-primary);
   border-color: var(--color-border);
 }
-
 .dark input:focus,
 .dark textarea:focus,
 .dark select:focus {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px var(--color-brand-muted);
 }
+.dark input::placeholder,
+.dark textarea::placeholder { color: var(--color-text-muted); }
+.dark input:disabled,
+.dark select:disabled { opacity: 0.5; }
+
+/* ── Cards y superficies ── */
+.dark .card { background-color: var(--color-surface); border-color: var(--color-border); }
+
+/* ── Botones ── */
+.dark .btn-secondary {
+  background-color: var(--color-surface-2);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+.dark .btn-secondary:hover:not(:disabled) { background-color: #475569; }
+.dark .btn-ghost { color: var(--color-text-secondary); }
+.dark .btn-ghost:hover:not(:disabled) {
+  background-color: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+/* ── Modal ── */
+.dark .modal-box    { background-color: var(--color-surface); }
+.dark .modal-header { border-color: var(--color-border); }
+.dark .modal-footer { border-color: var(--color-border); }
+
+/* ── Auth / Login ── */
+.dark #auth-screen {
+  background: linear-gradient(135deg, #020617 0%, #0F172A 100%);
+}
+
+/* ── Empty states y misceláneos ── */
+.dark .empty-state-title { color: var(--color-text-primary); }
+.dark .dash-alerta       { background-color: var(--color-surface-2); border-color: var(--color-border); }
