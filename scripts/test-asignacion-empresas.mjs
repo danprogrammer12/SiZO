@@ -102,11 +102,21 @@ const error = msg => { console.error(`  ✗ ${msg}`); fail++ }
       const wrapVisible = await page.locator('#edit-empresas-wrap:not(.hidden)').count()
       wrapVisible > 0 ? pass('Bloque de empresas visible en edición') : error('Bloque de empresas oculto en edición')
 
-      // Seleccionar todas las empresas disponibles
+      // Alternar el estado de todos los checkboxes para forzar siempre un cambio
       const cbs = await page.$$('input[name="empresa_ids"]')
-      for (const cb of cbs) await cb.check()
-      if (cbs.length > 0) pass(`${cbs.length} empresa(s) seleccionadas`)
+      // Desmarcar todos primero, luego marcar solo el primero — garantiza cambio
+      for (const cb of cbs) await cb.uncheck()
+      if (cbs.length > 0) {
+        await cbs[0].check()
+        pass(`Empresa seleccionada (forzando cambio detectabe)`)
+      }
     }
+
+    // Cambiar también el rol si es posible para garantizar que la Edge Function se invoque
+    const rolActualVal = await page.locator('#edit-rol').inputValue()
+    const rolNuevo = rolActualVal === 'ASESOR' ? 'CONSULTA' : 'ASESOR'
+    await page.selectOption('#edit-rol', rolNuevo)
+    pass(`Rol cambiado: ${rolActualVal} → ${rolNuevo}`)
 
     // Guardar
     const [res2] = await Promise.all([
@@ -115,7 +125,7 @@ const error = msg => { console.error(`  ✗ ${msg}`); fail++ }
     ])
     const body2 = await res2.json().catch(() => ({}))
     if (res2.status() === 200) {
-      pass(`Usuario actualizado — empresas: ${JSON.stringify(body2.empresas_ids)}`)
+      pass(`Usuario actualizado — rol: ${body2.rol}, empresas: ${JSON.stringify(body2.empresas_ids)}`)
       await page.waitForSelector('#form-usuario', { state: 'hidden', timeout: 5000 }).catch(() => {})
     } else {
       error(`Actualizar usuario falló — HTTP ${res2.status()}: ${body2.error}`)
