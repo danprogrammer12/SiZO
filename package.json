@@ -7,9 +7,14 @@
   "scripts": {
     "serve": "npx serve . -p 5000",
     "provision:admin": "node scripts/provision-admin.mjs",
-    "deploy": "firebase deploy --only hosting"
+    "test": "node testing/QA/poc-jsonb-roundtrip.mjs && node scripts/test-regresion.mjs && node scripts/test-seguridad-rls.mjs",
+    "test:unit": "node testing/QA/poc-jsonb-roundtrip.mjs",
+    "test:mecanica": "node scripts/test-regresion.mjs",
+    "test:seguridad": "node scripts/test-seguridad-rls.mjs",
+    "test:estres": "node scripts/test-estres.mjs"
   },
   "devDependencies": {
+    "playwright": "^1.61.0",
     "serve": "^14.0.0"
   },
   "dependencies": {

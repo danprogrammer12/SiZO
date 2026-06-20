@@ -2,6 +2,11 @@ import db              from '../db.js'
 import { get }         from '../store.js'
 import modal           from '../components/modal.js'
 import toast           from '../components/toast.js'
+import { esc }         from '../escape.js'
+import { errorUsuario } from '../errores.js'
+import { supabase }    from '../supabase.js'
+
+const FUNCTIONS_URL = 'https://ifqzdrqzjgsdhjbqkbba.supabase.co/functions/v1'
 
 const ROL_LABELS = { ADMIN: 'Administrador', ASESOR: 'Asesor SST', CONSULTA: 'Consulta' }
 const ROL_BADGE  = { ADMIN: 'badge-danger', ASESOR: 'badge-brand', CONSULTA: 'badge-neutral' }
@@ -27,23 +32,15 @@ async function render(container) {
         <p class="page-subtitle">Gestión de usuarios y permisos del tenant</p>
       </div>
       <div style="display:flex;gap:var(--space-2)">
-        <button class="btn btn-secondary" id="btn-invitar-info">
+        <button class="btn btn-primary" id="btn-crear-usuario">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
           </svg>
-          Crear usuarios
+          Nuevo usuario
         </button>
       </div>
-    </div>
-
-    <div class="alert alert-info" style="margin-bottom:var(--space-4)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span>Crear nuevos usuarios requiere el <strong>script de provisión</strong> (service role).
-      Aquí puedes ver y editar el perfil de los usuarios existentes.</span>
     </div>
 
     <div id="usuarios-tabla-wrap">
@@ -53,7 +50,7 @@ async function render(container) {
     </div>
   `
 
-  document.getElementById('btn-invitar-info').addEventListener('click', mostrarInfoCreacion)
+  document.getElementById('btn-crear-usuario').addEventListener('click', abrirFormularioCreacion)
   await cargarUsuarios()
 }
 
@@ -68,8 +65,7 @@ async function cargarUsuarios() {
     _usuarios = await db.list('usuarios', { order: 'nombre' })
     renderTabla(_usuarios)
   } catch (err) {
-    console.error(err)
-    wrap.innerHTML = `<div class="alert alert-danger">Error al cargar usuarios: ${err.message}</div>`
+    wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, 'cargar usuarios')}</div>`
   }
 }
 
@@ -116,13 +112,13 @@ function renderTabla(lista) {
                     <div style="width:32px;height:32px;border-radius:50%;background:var(--color-brand);
                       color:#fff;display:flex;align-items:center;justify-content:center;
                       font-weight:700;font-size:var(--font-size-sm);flex-shrink:0">
-                      ${(u.nombre || u.email || '?')[0].toUpperCase()}
+                      ${esc((u.nombre || u.email || '?')[0].toUpperCase())}
                     </div>
-                    <span style="font-weight:500">${u.nombre || '—'}</span>
+                    <span style="font-weight:500">${esc(u.nombre || '—')}</span>
                   </div>
                 </td>
-                <td class="text-sm">${u.email}</td>
-                <td><span class="badge ${ROL_BADGE[u.rol] || 'badge-neutral'}">${ROL_LABELS[u.rol] || u.rol}</span></td>
+                <td class="text-sm">${esc(u.email)}</td>
+                <td><span class="badge ${ROL_BADGE[u.rol] || 'badge-neutral'}">${esc(ROL_LABELS[u.rol] || u.rol)}</span></td>
                 <td class="text-sm">
                   ${u.rol === 'ADMIN'
                     ? '<span class="text-muted">Todas</span>'
@@ -133,7 +129,7 @@ function renderTabla(lista) {
                 <td>${estado}</td>
                 <td class="text-sm">${acceso}</td>
                 <td>
-                  <button class="btn btn-ghost btn-sm btn-editar-usuario" data-uid="${u.uid}" title="Editar">
+                  <button class="btn btn-ghost btn-sm btn-editar-usuario" data-uid="${esc(u.uid)}" title="Editar">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -170,32 +166,32 @@ function abrirFormularioEdicion(usuario) {
       <div class="form-row">
         <div class="form-group">
           <label>Nombre completo</label>
-          <input name="nombre" value="${usuario.nombre || ''}" />
+          <input name="nombre" value="${esc(usuario.nombre || '')}" />
         </div>
         <div class="form-group">
           <label>Teléfono</label>
-          <input name="tel" value="${usuario.tel || ''}" />
+          <input name="tel" value="${esc(usuario.tel || '')}" />
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Ciudad</label>
-          <input name="ciudad" value="${usuario.ciudad || ''}" />
+          <input name="ciudad" value="${esc(usuario.ciudad || '')}" />
         </div>
         <div class="form-group">
           <label>Fecha de nacimiento</label>
-          <input name="bday" type="date" value="${usuario.bday || ''}" />
+          <input name="bday" type="date" value="${esc(usuario.bday || '')}" />
         </div>
       </div>
       <div class="form-group">
         <label>LinkedIn</label>
-        <input name="linkedin" value="${usuario.linkedin || ''}" placeholder="https://linkedin.com/in/..." />
+        <input name="linkedin" value="${esc(usuario.linkedin || '')}" placeholder="https://linkedin.com/in/..." />
       </div>
 
       <div class="divider"></div>
       <div class="form-group">
         <label>Rol actual</label>
-        <input value="${ROL_LABELS[usuario.rol] || usuario.rol}" disabled style="opacity:.6;cursor:not-allowed" />
+        <input value="${esc(ROL_LABELS[usuario.rol] || usuario.rol)}" disabled style="opacity:.6;cursor:not-allowed" />
         <p class="form-hint">Cambiar rol requiere el script de provisión (service role)</p>
       </div>
 
@@ -240,51 +236,98 @@ async function guardarUsuario(usuario) {
     modal.close()
     await cargarUsuarios()
   } catch (err) {
-    console.error(err)
-    errEl.textContent = `Error: ${err.message}`
+    errEl.textContent = errorUsuario(err, 'guardar usuario')
     errEl.classList.remove('hidden')
     btn.disabled    = false
     btn.textContent = 'Guardar cambios'
   }
 }
 
-function mostrarInfoCreacion() {
+function abrirFormularioCreacion() {
   modal.open({
-    title: 'Crear nuevos usuarios',
-    size:  'md',
+    title:   'Nuevo usuario',
+    size:    'md',
     content: `
-      <p style="margin-bottom:var(--space-4)">
-        Crear usuarios requiere privilegios de <strong>service role</strong>, por lo que se hace
-        mediante el script de provisión (no desde el navegador, por seguridad).
-      </p>
-      <p style="margin-bottom:var(--space-4)">
-        <strong>Pasos:</strong>
-      </p>
-      <ol style="padding-left:var(--space-5);display:flex;flex-direction:column;gap:var(--space-3)">
-        <li class="text-sm">
-          Ve a <strong>Supabase → Authentication → Users → Invite user</strong>
-          e invita al usuario por correo.
-        </li>
-        <li class="text-sm">
-          El usuario acepta la invitación y define su contraseña.
-        </li>
-        <li class="text-sm">
-          Ejecuta el script de provisión para asignarle <code>tenant_id</code>, <code>role</code>
-          y <code>empresas_ids</code> en su <strong>app_metadata</strong> y crear su fila en
-          la tabla <code>usuarios</code>.
-        </li>
-        <li class="text-sm">
-          El usuario cierra y reabre sesión para que el JWT recoja los nuevos datos.
-        </li>
-      </ol>
-      <div class="alert alert-info" style="margin-top:var(--space-5)">
-        Más adelante esto se automatiza con una <strong>Edge Function</strong>
-        (<code>supabase/functions/crear-tenant</code>) invocada desde un panel de administración.
-      </div>
+      <form id="form-crear-usuario" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre completo <span class="text-danger">*</span></label>
+            <input id="nuevo-nombre" name="nombre" placeholder="Ej: María García" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico <span class="text-danger">*</span></label>
+            <input id="nuevo-email" name="email" type="email" placeholder="usuario@empresa.com" autocomplete="off" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Rol <span class="text-danger">*</span></label>
+          <select id="nuevo-rol" name="rol">
+            <option value="">— Seleccionar —</option>
+            <option value="ADMIN">Administrador</option>
+            <option value="ASESOR">Asesor SST</option>
+            <option value="CONSULTA">Consulta</option>
+          </select>
+        </div>
+        <div class="alert alert-info" style="margin-top:var(--space-3)">
+          El usuario recibirá un correo para establecer su contraseña.
+          Las empresas asignadas se pueden configurar después desde la edición de perfil.
+        </div>
+        <div id="form-crear-error" class="form-error hidden"></div>
+      </form>
     `,
-    footer: '<button class="btn btn-primary" id="btn-cerrar-info">Entendido</button>',
+    footer: `
+      <button class="btn btn-secondary" id="btn-cancelar-crear">Cancelar</button>
+      <button class="btn btn-primary"   id="btn-guardar-crear">Crear usuario</button>
+    `,
   })
-  document.getElementById('btn-cerrar-info').addEventListener('click', () => modal.close())
+
+  document.getElementById('btn-cancelar-crear').addEventListener('click', () => modal.close())
+  document.getElementById('btn-guardar-crear').addEventListener('click', ejecutarCrearUsuario)
+}
+
+async function ejecutarCrearUsuario() {
+  const nombre  = document.getElementById('nuevo-nombre')?.value.trim()
+  const email   = document.getElementById('nuevo-email')?.value.trim()
+  const rol     = document.getElementById('nuevo-rol')?.value
+  const errEl   = document.getElementById('form-crear-error')
+  const btn     = document.getElementById('btn-guardar-crear')
+
+  errEl.classList.add('hidden')
+
+  if (!nombre || !email || !rol) {
+    errEl.textContent = 'Completa todos los campos requeridos.'
+    errEl.classList.remove('hidden')
+    return
+  }
+
+  btn.disabled    = true
+  btn.textContent = 'Creando...'
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Sin sesión activa')
+
+    const res = await fetch(`${FUNCTIONS_URL}/crear-usuario`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ nombre, email, rol, empresasIds: [] }),
+    })
+
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || `Error ${res.status}`)
+
+    toast.success(`Usuario ${esc(nombre)} creado. Se envió un enlace de acceso al correo.`)
+    modal.close()
+    await cargarUsuarios()
+  } catch (err) {
+    errEl.textContent = errorUsuario(err, 'crear usuario')
+    errEl.classList.remove('hidden')
+    btn.disabled    = false
+    btn.textContent = 'Crear usuario'
+  }
 }
 
 export { render }

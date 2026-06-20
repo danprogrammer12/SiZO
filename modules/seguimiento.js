@@ -4,6 +4,8 @@
 import db                from '../db.js'
 import { get, subscribe } from '../store.js'
 import toast             from '../components/toast.js'
+import { esc }           from '../escape.js'
+import { errorUsuario }  from '../errores.js'
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -92,7 +94,7 @@ async function pintarFormulario(root) {
     <div class="page-header">
       <div>
         <h2 class="page-title">Seguimiento Mensual</h2>
-        <p class="page-subtitle">${empresa.nombre} — ${MESES[month - 1]} ${year}</p>
+        <p class="page-subtitle">${esc(empresa.nombre)} — ${MESES[month - 1]} ${year}</p>
       </div>
       ${soloLectura ? '' : `
         <div style="display:flex;gap:var(--space-2);align-items:center">
@@ -110,7 +112,7 @@ async function pintarFormulario(root) {
     existente = await db.getById('seguimiento', segId)
   } catch (err) {
     document.getElementById('seg-form-wrap').innerHTML =
-      `<div class="alert alert-danger">Error al cargar: ${err.message}</div>`
+      `<div class="alert alert-danger">${errorUsuario(err, 'cargar seguimiento')}</div>`
     return
   }
 
@@ -125,7 +127,7 @@ async function pintarFormulario(root) {
             ${sec.campos.map(([k, label]) => `
               <div class="seg-field">
                 <label>${label}</label>
-                <input type="number" name="${k}" min="0" step="1" value="${v(k)}" />
+                <input type="number" name="${k}" min="0" step="1" value="${esc(v(k))}" required />
               </div>`).join('')}
           </div>`).join('')}
 
@@ -133,7 +135,7 @@ async function pintarFormulario(root) {
           <h4 class="seg-card-title">Otros</h4>
           <div class="seg-field">
             <label>Fecha último AT</label>
-            <input type="date" name="fechaUltimoAt" value="${existente?.fechaUltimoAt || ''}" />
+            <input type="date" name="fechaUltimoAt" value="${esc(existente?.fechaUltimoAt || '')}" />
           </div>
         </div>
       </div>
@@ -141,7 +143,7 @@ async function pintarFormulario(root) {
       <div class="card" style="margin-top:var(--space-4)">
         <div class="seg-field">
           <label>Observaciones del asesor</label>
-          <textarea name="obs" rows="3" placeholder="Notas del período...">${existente?.obs || ''}</textarea>
+          <textarea name="obs" rows="3" placeholder="Notas del período...">${esc(existente?.obs || '')}</textarea>
         </div>
         ${soloLectura ? '' : `
           <label style="display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-3);cursor:pointer">
@@ -156,9 +158,12 @@ async function pintarFormulario(root) {
   actualizarEstado(existente)
 
   if (!soloLectura) {
-    const btn = document.getElementById('seg-guardar')
-    btn.disabled = false
-    btn.addEventListener('click', () => guardar(segId, empresa.id, year, month, existente))
+    const btn  = document.getElementById('seg-guardar')
+    const form = document.getElementById('seg-form')
+    btn.disabled = true // sin cambios aún: nada que guardar
+    form.addEventListener('input', () => { btn.disabled = false })
+    form.addEventListener('change', () => { btn.disabled = false })
+    btn.addEventListener('click', () => guardar(segId, empresa.id, year, month, existente, btn))
   }
 }
 
@@ -170,10 +175,26 @@ function actualizarEstado(doc) {
   else                 { badge.className = 'badge badge-warning'; badge.textContent = 'En progreso' }
 }
 
-async function guardar(segId, empresaId, year, mes, existente) {
+async function guardar(segId, empresaId, year, mes, existente, btn) {
   const form = document.getElementById('seg-form')
-  const btn  = document.getElementById('seg-guardar')
+
+  if (!form.checkValidity()) {
+    form.reportValidity()
+    toast.error('Completa todos los campos numéricos con valores válidos (≥ 0)')
+    return
+  }
+
   const data = Object.fromEntries(new FormData(form).entries())
+
+  const valores = {}
+  for (const k of NUM_KEYS) {
+    const n = Number(data[k])
+    if (data[k] === '' || !Number.isInteger(n) || n < 0) {
+      toast.error('Los campos numéricos solo aceptan números enteros ≥ 0')
+      return
+    }
+    valores[k] = n
+  }
 
   btn.disabled = true
   btn.textContent = 'Guardando...'
@@ -183,8 +204,8 @@ async function guardar(segId, empresaId, year, mes, existente) {
     fechaUltimoAt: data.fechaUltimoAt || null,
     obs: data.obs?.trim() || '',
     completado: data.completado === 'on',
+    ...valores,
   }
-  NUM_KEYS.forEach(k => { payload[k] = parseInt(data[k]) || 0 })
 
   // Conserva creadoPor original en updates
   if (existente?.creadoPor) payload.creadoPor = existente.creadoPor
@@ -193,12 +214,11 @@ async function guardar(segId, empresaId, year, mes, existente) {
     const guardado = await db.upsert('seguimiento', payload)
     toast.success(`Seguimiento de ${MESES[mes - 1]} guardado`)
     actualizarEstado(guardado)
-    btn.disabled = false
+    btn.disabled = true // ya guardado: vuelve a habilitarse solo con un nuevo cambio
     btn.textContent = 'Guardar'
   } catch (err) {
-    console.error(err)
-    toast.error(`Error al guardar: ${err.message}`)
-    btn.disabled = false
+    toast.error(errorUsuario(err, 'guardar seguimiento'))
+    btn.disabled = false // permite reintentar sin necesidad de editar de nuevo
     btn.textContent = 'Guardar'
   }
 }

@@ -1,8 +1,14 @@
-// SIZO — Pruebas de regresión (Fases 0-3)
+// SIZO — Pruebas de regresión de MECÁNICA (Fases 0-3)
 // Ejecuta 3 pruebas contra Supabase y reporta PASS/FAIL.
-//   node scripts/test-regresion.mjs
+//   node scripts/test-regresion.mjs       (o: npm run test:mecanica)
+//
+// ⚠️ ALCANCE: estas pruebas usan service_role, que SALTA la RLS. Validan
+// la mecánica CRUD y el cálculo de indicadores, NO la autorización por rol.
+// La validación de RLS/roles vive en scripts/test-seguridad-rls.mjs (H2).
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
+import { calcularIndicadores } from '../modules/calcular-indicadores.js'
+import { fromRow } from '../case-convert.js'
 
 const env = readFileSync(new URL('../.env', import.meta.url), 'utf8')
 const E = {}
@@ -64,13 +70,12 @@ async function test2() {
   check('Segundo upsert actualiza (no inserta)', seg.act_ejec === 9,
     `act_ejec = ${seg.act_ejec} (esperado 9)`)
 
-  // Motor de indicadores (replica de la fórmula pura)
-  const plan = +((seg.act_ejec / seg.act_prog) * 100).toFixed(2)   // 9/10*100 = 90
-  const aus  = +((seg.dias_aus / (seg.trab * seg.dias_trab)) * 100).toFixed(2) // 22/880*100 = 2.5
-  const ifa  = +((seg.at_oc / seg.trab) * 100).toFixed(2)          // 2/40*100 = 5
-  check('Indicador plan correcto', plan === 90, `plan = ${plan}% (esperado 90%)`)
-  check('Indicador ausentismo correcto', aus === 2.5, `aus = ${aus}% (esperado 2.5%)`)
-  check('Indicador IFA correcto', ifa === 5, `IFA = ${ifa} (esperado 5)`)
+  // Motor de indicadores — usa el mismo motor que el frontend
+  // HHT = trab(40) × diasTrab(22) × 8 = 7.040 → IFA = 2×240.000/7.040 = 68.18
+  const kpis = calcularIndicadores(fromRow(seg))
+  check('Indicador plan correcto',       kpis.plan === 90,    `plan = ${kpis.plan}% (esperado 90%)`)
+  check('Indicador ausentismo correcto', kpis.aus  === 2.5,   `aus = ${kpis.aus}% (esperado 2.5%)`)
+  check('Indicador IFA correcto (Dec. 1072 × 240.000 HHT)', kpis.ifa === 68.18, `IFA = ${kpis.ifa} (esperado 68.18)`)
 
   await admin.from('seguimiento').delete().eq('id', id)
 }
