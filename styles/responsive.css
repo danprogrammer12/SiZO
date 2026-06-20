@@ -1,0 +1,164 @@
+/* ============================================================
+   SIZO — Responsive / Mobile
+   Breakpoints: 1024px (tablet), 768px (móvil), 390px (iPhone SE)
+   ============================================================ */
+
+/* ── Overlay que cierra el sidebar en mobile ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0; bottom: 0;
+  left: var(--sidebar-width); /* cubre solo la zona fuera del sidebar */
+  right: 0;
+  background: rgb(0 0 0 / 0.5);
+  z-index: calc(var(--z-sidebar) - 1);
+}
+.sidebar-overlay.visible { display: block; }
+
+/* ════════════════════════════════════════════════
+   TABLET — ≤ 1024px
+   ════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  /* Page header apilado si hay muchos botones */
+  .page-header {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .page-header > div:last-child {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* Dashboard KPI grid — 2 cols en tablet */
+  .dash-kpis {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Dashboard row chart + alertas — apilar */
+  .dash-row {
+    flex-direction: column !important;
+  }
+  .dash-chart-card { width: 100% !important; }
+}
+
+/* ════════════════════════════════════════════════
+   MÓVIL — ≤ 768px
+   ════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Contiene el desbordamiento del sidebar drawer ── */
+  #app-shell { overflow-x: hidden; }
+
+  /* ── Sidebar como drawer ── */
+  .sidebar {
+    transform: translateX(-100%);
+    width: var(--sidebar-width) !important;
+    transition: transform var(--transition-slow);
+    box-shadow: none;
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* ── Main sin margen lateral ── */
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    padding: 0 var(--space-3);
+    gap: var(--space-2);
+  }
+  .topbar-menu-btn { display: flex !important; }
+  .topbar-select   { max-width: 140px; font-size: var(--font-size-xs); }
+  .topbar-periodo-label { min-width: 56px; font-size: var(--font-size-xs); }
+
+  /* ── Contenido ── */
+  .content { padding: var(--space-3); }
+
+  /* ── Page header vertical ── */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* ── Cards ── */
+  .card { padding: var(--space-4); }
+
+  /* ── Tablas: scroll horizontal ── */
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table    { min-width: 560px; }
+
+  /* ── KPIs: 1 columna ── */
+  .dash-kpis {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Formularios ── */
+  .form-row {
+    flex-direction: column !important;
+    gap: var(--space-3) !important;
+  }
+
+  /* ── Modales: ancho completo ── */
+  .modal-dialog {
+    width: calc(100vw - var(--space-8)) !important;
+    max-width: none !important;
+    margin: var(--space-4) auto !important;
+  }
+
+  /* ── Botones de acción en stacks ── */
+  .btn-group-mobile {
+    flex-direction: column;
+    width: 100%;
+  }
+  .btn-group-mobile .btn { width: 100%; justify-content: center; }
+}
+
+/* ════════════════════════════════════════════════
+   MÓVIL PEQUEÑO — ≤ 390px (iPhone SE / 14 Pro)
+   ════════════════════════════════════════════════ */
+@media (max-width: 390px) {
+
+  /* ── Topbar: ocultar selector de empresa si no cabe ── */
+  .topbar-empresa-selector { display: none; }
+
+  /* ── Período más compacto ── */
+  .topbar-periodo-label { min-width: 48px; }
+
+  /* ── Contenido sin padding lateral extra ── */
+  .content { padding: var(--space-2); }
+
+  /* ── Títulos más pequeños ── */
+  .page-title    { font-size: var(--font-size-lg); }
+  .page-subtitle { font-size: var(--font-size-xs); }
+
+  /* ── Card compacta ── */
+  .card { padding: var(--space-3); border-radius: var(--radius-md); }
+
+  /* ── Login card: sin borde redondeado grande ── */
+  .login-card {
+    border-radius: var(--radius-lg) !important;
+    padding: var(--space-6) !important;
+  }
+
+  /* ── Dashboard resumen pills ── */
+  .dash-resumen {
+    flex-wrap: wrap;
+    gap: var(--space-2) !important;
+  }
+  .dash-resumen-pill { font-size: var(--font-size-xs) !important; }
+
+  /* ── Tabla: fuente más pequeña ── */
+  .data-table { font-size: var(--font-size-xs); }
+  .data-table th, .data-table td { padding: var(--space-2) var(--space-3) !important; }
+
+  /* ── Botones más pequeños ── */
+  .btn    { font-size: var(--font-size-xs); padding: var(--space-1) var(--space-3); }
+  .btn-lg { font-size: var(--font-size-sm); padding: var(--space-2) var(--space-4); }
+
+  /* ── Ocultar columnas no críticas en tablas ── */
+  .col-hide-xs { display: none !important; }
+}
