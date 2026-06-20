@@ -2,6 +2,8 @@ import db              from '../db.js'
 import { get }         from '../store.js'
 import modal           from '../components/modal.js'
 import toast           from '../components/toast.js'
+import { esc }         from '../escape.js'
+import { errorUsuario } from '../errores.js'
 
 // ── Nivel Res. 0312 calculado (no se almacena) ────────────────
 function nivelRes0312(trab, nivelRiesgo) {
@@ -62,18 +64,22 @@ async function render(container) {
 }
 
 let _empresas = []
+let _asesores = {}  // { [uuid]: nombre } para resolver asesor_id → nombre
 
 async function cargarEmpresas() {
-  const user = get('user')
   const wrap = document.getElementById('empresas-tabla-wrap')
   if (!wrap) return
 
   try {
-    _empresas = await db.list('empresas', { eq: { activa: true }, order: 'nombre' })
+    const [empresas, usuarios] = await Promise.all([
+      db.list('empresas', { eq: { activa: true }, order: 'nombre' }),
+      db.list('usuarios', { eq: { activo: true } }),
+    ])
+    _asesores = Object.fromEntries(usuarios.map(u => [u.id, u.nombre]))
+    _empresas = empresas
     renderTabla(_empresas)
   } catch (err) {
-    console.error(err)
-    wrap.innerHTML = `<div class="alert alert-danger">Error al cargar empresas: ${err.message}</div>`
+    wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, 'cargar empresas')}</div>`
   }
 }
 
@@ -128,23 +134,23 @@ function renderTabla(lista) {
             const hoy = new Date().toISOString().slice(0,10)
             const venceProx = em.contratoFin && em.contratoFin <= new Date(Date.now() + 30*864e5).toISOString().slice(0,10)
             return `
-              <tr data-id="${em.id}">
+              <tr data-id="${esc(em.id)}">
                 <td>
-                  <div style="font-weight:600">${em.nombre}</div>
-                  ${em.nombreCom ? `<div class="text-muted text-xs">${em.nombreCom}</div>` : ''}
+                  <div style="font-weight:600">${esc(em.nombre)}</div>
+                  ${em.nombreCom ? `<div class="text-muted text-xs">${esc(em.nombreCom)}</div>` : ''}
                 </td>
-                <td class="text-sm">${em.nit || '—'}</td>
-                <td class="text-sm">${em.ciudad || '—'}</td>
-                <td class="text-sm text-center">${em.trab || 0}</td>
+                <td class="text-sm">${esc(em.nit || '—')}</td>
+                <td class="text-sm">${esc(em.ciudad || '—')}</td>
+                <td class="text-sm text-center">${esc(em.trab || 0)}</td>
                 <td><span class="badge ${colNivel}">Nivel ${nivel}</span></td>
-                <td class="text-sm">${em.arl || '—'}</td>
-                <td class="text-sm">${em.asesorId || '—'}</td>
+                <td class="text-sm">${esc(em.arl || '—')}</td>
+                <td class="text-sm">${esc(_asesores[em.asesorId] || '—')}</td>
                 <td class="text-sm ${venceProx ? 'text-warning' : ''}">
-                  ${em.contratoFin || '—'}${venceProx ? ' ⚠️' : ''}
+                  ${esc(em.contratoFin || '—')}${venceProx ? ' ⚠️' : ''}
                 </td>
                 ${user.rol === 'ADMIN' ? `
                   <td>
-                    <button class="btn btn-ghost btn-sm btn-editar" data-id="${em.id}" title="Editar">
+                    <button class="btn btn-ghost btn-sm btn-editar" data-id="${esc(em.id)}" title="Editar">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -186,30 +192,30 @@ function abrirFormulario(empresa = null) {
       <div class="form-row">
         <div class="form-group">
           <label>Razón social *</label>
-          <input name="nombre" value="${em.nombre || ''}" required />
+          <input name="nombre" value="${esc(em.nombre || '')}" required />
         </div>
         <div class="form-group">
           <label>Nombre comercial</label>
-          <input name="nombreCom" value="${em.nombreCom || ''}" />
+          <input name="nombreCom" value="${esc(em.nombreCom || '')}" />
         </div>
       </div>
       <div class="form-row col-3">
         <div class="form-group">
           <label>NIT</label>
-          <input name="nit" value="${em.nit || ''}" />
+          <input name="nit" value="${esc(em.nit || '')}" />
         </div>
         <div class="form-group">
           <label>Ciudad *</label>
-          <input name="ciudad" value="${em.ciudad || ''}" required />
+          <input name="ciudad" value="${esc(em.ciudad || '')}" required />
         </div>
         <div class="form-group">
           <label>Departamento</label>
-          <input name="dpto" value="${em.dpto || ''}" />
+          <input name="dpto" value="${esc(em.dpto || '')}" />
         </div>
       </div>
       <div class="form-group">
         <label>Dirección</label>
-        <input name="direccion" value="${em.direccion || ''}" />
+        <input name="direccion" value="${esc(em.direccion || '')}" />
       </div>
 
       <div class="divider"></div>
@@ -219,7 +225,7 @@ function abrirFormulario(empresa = null) {
       <div class="form-row col-3">
         <div class="form-group">
           <label>N° trabajadores *</label>
-          <input name="trab" type="number" min="1" value="${em.trab || ''}" required />
+          <input name="trab" type="number" min="1" value="${esc(em.trab || '')}" required />
         </div>
         <div class="form-group">
           <label>Nivel de riesgo *</label>
@@ -275,11 +281,11 @@ function abrirFormulario(empresa = null) {
         </div>
         <div class="form-group">
           <label>Inicio contrato</label>
-          <input name="contratoInicio" type="date" value="${em.contratoInicio || ''}" />
+          <input name="contratoInicio" type="date" value="${esc(em.contratoInicio || '')}" />
         </div>
         <div class="form-group">
           <label>Fin contrato</label>
-          <input name="contratoFin" type="date" value="${em.contratoFin || ''}" />
+          <input name="contratoFin" type="date" value="${esc(em.contratoFin || '')}" />
         </div>
       </div>
 
@@ -290,16 +296,16 @@ function abrirFormulario(empresa = null) {
       <div class="form-row">
         <div class="form-group">
           <label>Representante legal</label>
-          <input name="repLegal" value="${em.repLegal || ''}" />
+          <input name="repLegal" value="${esc(em.repLegal || '')}" />
         </div>
         <div class="form-group">
           <label>Responsable SST</label>
-          <input name="respSst" value="${em.respSst || ''}" />
+          <input name="respSst" value="${esc(em.respSst || '')}" />
         </div>
       </div>
       <div class="form-group">
         <label>Observaciones</label>
-        <textarea name="obs" rows="2">${em.obs || ''}</textarea>
+        <textarea name="obs" rows="2">${esc(em.obs || '')}</textarea>
       </div>
 
       <div id="form-empresa-error" class="form-error hidden"></div>
@@ -385,8 +391,7 @@ async function guardar(empresaActual) {
     modal.close()
     await cargarEmpresas()
   } catch (err) {
-    console.error(err)
-    errEl.textContent = `Error: ${err.message}`
+    errEl.textContent = errorUsuario(err, 'guardar empresa')
     errEl.classList.remove('hidden')
     btn.disabled = false
     btn.textContent = empresaActual ? 'Guardar cambios' : 'Crear empresa'

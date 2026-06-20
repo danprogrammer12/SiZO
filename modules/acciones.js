@@ -1,5 +1,6 @@
 // SIZO — Acciones ACPM (Fase 3)
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { esc } from '../escape.js'
 
 const ESTADO_BADGE = { abierta: 'badge-brand', en_progreso: 'badge-warning', cerrada: 'badge-success', vencida: 'badge-danger' }
 const PRIOR_BADGE  = { alta: 'badge-danger', media: 'badge-warning', baja: 'badge-neutral' }
@@ -12,7 +13,7 @@ const { render } = crearModulo({
   labelNuevo: 'Nueva acción',
   ordenPor: 'fechaLimite',
   columnas: [
-    { key: 'descripcion', label: 'Descripción', format: v => v?.length > 60 ? v.slice(0, 60) + '…' : v },
+    { key: 'descripcion', label: 'Descripción', format: v => esc(v?.length > 60 ? v.slice(0, 60) + '…' : v) },
     { key: 'tipo', label: 'Tipo' },
     { key: 'prioridad', label: 'Prioridad', format: v => badge(v, PRIOR_BADGE) },
     { key: 'estado', label: 'Estado', format: v => badge(v.replace('_', ' '), { [v.replace('_',' ')]: ESTADO_BADGE[v] }) },

@@ -6,6 +6,8 @@ import db                  from '../db.js'
 import { get, subscribe }  from '../store.js'
 import modal               from '../components/modal.js'
 import toast               from '../components/toast.js'
+import { esc }             from '../escape.js'
+import { errorUsuario }    from '../errores.js'
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -17,7 +19,7 @@ export function fmtFecha(v) {
 
 export function badge(valor, mapa) {
   const cls = mapa?.[valor] || 'badge-neutral'
-  return `<span class="badge ${cls}">${valor ?? '—'}</span>`
+  return `<span class="badge ${cls}">${esc(valor ?? '—')}</span>`
 }
 
 // ── Construye el módulo ───────────────────────────────────────
@@ -62,17 +64,22 @@ export function crearModulo(cfg) {
           <h2 class="page-title">${cfg.titulo}</h2>
           <p class="page-subtitle">${empresa ? empresa.nombre : cfg.subtitulo}</p>
         </div>
-        ${puedeEscribir ? `<button class="btn btn-primary" id="crud-nuevo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg> ${cfg.labelNuevo || 'Nuevo'}
-        </button>` : ''}
+        <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          ${(cfg.botones || []).map((b, i) => `<button class="btn ${b.clase || 'btn-secondary'}" id="crud-extra-${i}">${b.label}</button>`).join('')}
+          ${puedeEscribir ? `<button class="btn btn-primary" id="crud-nuevo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg> ${cfg.labelNuevo || 'Nuevo'}
+          </button>` : ''}
+        </div>
       </div>
       <div id="crud-tabla"><div style="text-align:center;padding:var(--space-12)"><div class="spinner spinner-lg"></div></div></div>
     `
 
     if (puedeEscribir)
       document.getElementById('crud-nuevo').addEventListener('click', () => abrirForm(null))
+    ;(cfg.botones || []).forEach((b, i) =>
+      document.getElementById(`crud-extra-${i}`)?.addEventListener('click', b.onClick))
 
     await cargar()
   }
@@ -87,7 +94,7 @@ export function crearModulo(cfg) {
       _items = await db.list(cfg.tabla, { eq, order: cfg.ordenPor || 'creadoEn', ascending: false })
       pintarTabla()
     } catch (err) {
-      wrap.innerHTML = `<div class="alert alert-danger">Error al cargar: ${err.message}</div>`
+      wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, `cargar ${cfg.tabla}`)}</div>`
     }
   }
 
@@ -117,7 +124,7 @@ export function crearModulo(cfg) {
           <tbody>
             ${_items.map(item => `
               <tr>
-                ${cfg.columnas.map(c => `<td class="text-sm">${c.format ? c.format(item[c.key], item) : (item[c.key] ?? '—')}</td>`).join('')}
+                ${cfg.columnas.map(c => `<td class="text-sm">${c.format ? c.format(item[c.key], item) : esc(item[c.key] ?? '—')}</td>`).join('')}
                 ${puedeEscribir ? `<td>
                   <button class="btn btn-ghost btn-sm crud-editar" data-id="${item.id}" title="Editar">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -160,14 +167,14 @@ export function crearModulo(cfg) {
         </select>`
       }
       if (f.type === 'textarea')
-        return `<textarea name="${f.key}" rows="2">${val}</textarea>`
+        return `<textarea name="${f.key}" rows="2">${esc(val)}</textarea>`
       if (f.type === 'checkbox')
         return `<label class="crud-check"><input type="checkbox" name="${f.key}" ${d[f.key] ? 'checked' : ''}/> ${f.checkLabel || 'Sí'}</label>`
       if (f.type === 'date')
-        return `<input type="date" name="${f.key}" value="${val ? String(val).slice(0,10) : ''}" ${req}/>`
+        return `<input type="date" name="${f.key}" value="${esc(val ? String(val).slice(0,10) : '')}" ${req}/>`
       if (f.type === 'number')
-        return `<input type="number" name="${f.key}" value="${val}" ${f.min != null ? `min="${f.min}"` : ''} ${f.step ? `step="${f.step}"` : ''} ${req}/>`
-      return `<input type="text" name="${f.key}" value="${val}" ${req}/>`
+        return `<input type="number" name="${f.key}" value="${esc(val)}" ${f.min != null ? `min="${f.min}"` : ''} ${f.step ? `step="${f.step}"` : ''} ${req}/>`
+      return `<input type="text" name="${f.key}" value="${esc(val)}" ${req}/>`
     }
 
     const content = `
@@ -240,7 +247,7 @@ export function crearModulo(cfg) {
       modal.close()
       await cargar()
     } catch (err) {
-      errEl.textContent = `Error: ${err.message}`
+      errEl.textContent = errorUsuario(err, `guardar ${cfg.tabla}`)
       errEl.classList.remove('hidden')
       btn.disabled = false
       btn.textContent = item ? 'Guardar' : 'Crear'
@@ -265,7 +272,7 @@ export function crearModulo(cfg) {
         modal.close()
         await cargar()
       } catch (err) {
-        toast.error(`Error: ${err.message}`)
+        toast.error(errorUsuario(err, `eliminar ${cfg.tabla}`))
       }
     })
   }

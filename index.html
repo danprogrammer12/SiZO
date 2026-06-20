@@ -4,6 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="SIZO — Plataforma SaaS de gestión SG-SST" />
+
+  <!-- Seguridad (H7) — Content-Security-Policy. script-src 'self' bloquea scripts
+       inline/onerror inyectados (defensa en profundidad sobre el escape de H1).
+       Nota: frame-ancestors / X-Frame-Options / nosniff requieren headers HTTP
+       (ver serve.json para local; en producción añadirlos en Cloudflare). -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    connect-src 'self' https://ifqzdrqzjgsdhjbqkbba.supabase.co wss://ifqzdrqzjgsdhjbqkbba.supabase.co;
+    base-uri 'self';
+    form-action 'self';
+    object-src 'none'" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+
   <title>SIZO — SG-SST</title>
 
   <!-- Favicon -->
@@ -56,6 +73,54 @@
           <button type="submit" class="btn btn-primary btn-lg" id="login-btn" style="width:100%">
             <span id="login-btn-text">Iniciar sesión</span>
             <span id="login-btn-spinner" class="spinner hidden"></span>
+          </button>
+
+          <div style="text-align:center;margin-top:var(--space-3)">
+            <button type="button" id="forgot-link" style="background:none;border:none;color:#94A3B8;font-size:var(--font-size-sm);cursor:pointer;text-decoration:underline">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+        </form>
+
+        <!-- Formulario de recuperación de contraseña -->
+        <form id="forgot-form" class="login-form hidden" novalidate>
+          <p style="color:#94A3B8;font-size:var(--font-size-sm);margin-bottom:var(--space-3)">
+            Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
+          </p>
+          <div class="form-group">
+            <label for="forgot-email">Correo electrónico</label>
+            <input type="email" id="forgot-email" placeholder="correo@empresa.com" autocomplete="email" required />
+          </div>
+          <div id="forgot-error" class="form-error hidden"></div>
+          <div id="forgot-ok" class="hidden" style="color:#4ADE80;font-size:var(--font-size-sm);margin-bottom:var(--space-3)"></div>
+          <button type="submit" class="btn btn-primary btn-lg" id="forgot-btn" style="width:100%">
+            <span id="forgot-btn-text">Enviar enlace</span>
+            <span id="forgot-btn-spinner" class="spinner hidden"></span>
+          </button>
+          <div style="text-align:center;margin-top:var(--space-3)">
+            <button type="button" id="back-to-login" style="background:none;border:none;color:#94A3B8;font-size:var(--font-size-sm);cursor:pointer;text-decoration:underline">
+              Volver al inicio de sesión
+            </button>
+          </div>
+        </form>
+
+        <!-- Formulario de nueva contraseña (evento PASSWORD_RECOVERY) -->
+        <form id="reset-form" class="login-form hidden" novalidate>
+          <p style="color:#94A3B8;font-size:var(--font-size-sm);margin-bottom:var(--space-3)">
+            Ingresa tu nueva contraseña.
+          </p>
+          <div class="form-group">
+            <label for="reset-password">Nueva contraseña</label>
+            <input type="password" id="reset-password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
+          </div>
+          <div class="form-group">
+            <label for="reset-password2">Confirmar contraseña</label>
+            <input type="password" id="reset-password2" placeholder="Repite la contraseña" autocomplete="new-password" required />
+          </div>
+          <div id="reset-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg" id="reset-btn" style="width:100%">
+            <span id="reset-btn-text">Guardar nueva contraseña</span>
+            <span id="reset-btn-spinner" class="spinner hidden"></span>
           </button>
         </form>
 

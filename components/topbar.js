@@ -1,5 +1,6 @@
 import { get, set, subscribe } from '../store.js'
 import db from '../db.js'
+import { esc } from '../escape.js'
 
 const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
@@ -103,7 +104,7 @@ async function cargarEmpresas(user) {
     }
 
     select.innerHTML = empresas.map(em =>
-      `<option value="${em.id}">${em.nombre}</option>`
+      `<option value="${esc(em.id)}">${esc(em.nombre)}</option>`
     ).join('')
 
     set('empresa', empresas[0])

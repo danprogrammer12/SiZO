@@ -1,5 +1,6 @@
 // SIZO — Ausentismo (Fase 3)
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { abrirVerificadorARL, abrirPortalADRES } from '../components/verificar-arl.js'
 
 const CAUSA_LABEL = {
   AT: 'Accidente trabajo', EL: 'Enf. laboral', EG: 'Enf. general',
@@ -9,6 +10,10 @@ const CAUSA_LABEL = {
 const CAUSA_BADGE = { AT: 'badge-danger', EL: 'badge-warning', EG: 'badge-brand' }
 
 const { render } = crearModulo({
+  botones: [
+    { label: '🔍 Consultar ARL', clase: 'btn-secondary', onClick: abrirVerificadorARL },
+    { label: '🌐 Consultar ADRES', clase: 'btn-secondary', onClick: abrirPortalADRES },
+  ],
   tabla: 'ausencias',
   titulo: 'Ausentismo',
   subtitulo: 'Registro de ausencias e incapacidades',

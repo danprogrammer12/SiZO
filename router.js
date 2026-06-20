@@ -3,6 +3,7 @@
 // Carga módulos dinámicamente y renderiza en #view
 // ─────────────────────────────────────────────────────────────
 import { get } from './store.js'
+import { errorUsuario } from './errores.js'
 
 const routes = {
   'dashboard':    () => import('./modules/dashboard.js'),
@@ -21,7 +22,10 @@ const routes = {
   'indicadores':  () => import('./modules/indicadores.js'),
 }
 
-// Control de acceso por rol
+// Control de acceso por rol — CAPA UX ÚNICAMENTE
+// Redirige al dashboard si el usuario no tiene el rol requerido.
+// La defensa real es la RLS de Supabase: aunque alguien manipule el hash,
+// las queries no retornarán datos sin el rol correcto en el JWT.
 const rolesPermitidos = {
   'casos': ['ADMIN'],
 }
@@ -50,12 +54,12 @@ async function navigate(ruta) {
       await modulo.render(view)
     }
   } catch (err) {
-    console.error('Error cargando módulo:', ruta, err)
+    const msg = errorUsuario(err, `cargar módulo ${ruta}`)
     view.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">⚠️</div>
         <h3 class="empty-state-title">Error al cargar el módulo</h3>
-        <p>${err.message}</p>
+        <p>${msg}</p>
       </div>`
   }
 
