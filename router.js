@@ -22,7 +22,10 @@ const routes = {
   'indicadores':  () => import('./modules/indicadores.js'),
 }
 
-// Control de acceso por rol
+// Control de acceso por rol — CAPA UX ÚNICAMENTE
+// Redirige al dashboard si el usuario no tiene el rol requerido.
+// La defensa real es la RLS de Supabase: aunque alguien manipule el hash,
+// las queries no retornarán datos sin el rol correcto en el JWT.
 const rolesPermitidos = {
   'casos': ['ADMIN'],
 }

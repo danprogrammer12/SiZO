@@ -3,6 +3,103 @@ import { set }        from './store.js'
 import { navigate }   from './router.js'
 
 // ─────────────────────────────────────────────────────────────
+// Temporizador de inactividad — 30 min totales (H13 extensión)
+// 25 min sin actividad → advertencia con cuenta regresiva de 5 min
+// Si no hay respuesta → cierre de sesión automático
+// ─────────────────────────────────────────────────────────────
+const INACTIVIDAD_MS  = 25 * 60 * 1000  // 25 min → muestra advertencia
+const CUENTA_REGR_MS  =  5 * 60 * 1000  // 5 min → cierre si no responde
+
+let timerInactividad = null
+let timerCuentaRegr  = null
+let intervalDisplay  = null
+let modalInact       = null
+
+function iniciarTimerInactividad() {
+  clearTimeout(timerInactividad)
+  timerInactividad = setTimeout(mostrarAdvertenciaInactividad, INACTIVIDAD_MS)
+}
+
+function resetearInactividad() {
+  // Solo resetea si no hay advertencia activa (el usuario YA está siendo avisado)
+  if (modalInact) return
+  iniciarTimerInactividad()
+}
+
+function detenerTimerInactividad() {
+  clearTimeout(timerInactividad)
+  clearTimeout(timerCuentaRegr)
+  clearInterval(intervalDisplay)
+  timerInactividad = null
+  timerCuentaRegr  = null
+  intervalDisplay  = null
+}
+
+function mostrarAdvertenciaInactividad() {
+  let segsRestantes = CUENTA_REGR_MS / 1000
+
+  const el = document.createElement('div')
+  el.id = 'modal-inactividad'
+  el.style.cssText = `
+    position:fixed;inset:0;background:rgb(0 0 0/.6);display:flex;
+    align-items:center;justify-content:center;z-index:9999;padding:1rem`
+  el.innerHTML = `
+    <div style="background:var(--color-surface);border-radius:var(--radius-xl);
+      box-shadow:var(--shadow-xl);padding:2rem;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:2rem;margin-bottom:.75rem">⏱️</div>
+      <h3 style="font-size:var(--font-size-lg);font-weight:600;margin-bottom:.5rem;color:var(--color-text-primary)">
+        Sesión por expirar
+      </h3>
+      <p style="color:var(--color-text-secondary);font-size:var(--font-size-sm);margin-bottom:1.25rem">
+        Llevas 25 minutos inactivo. La sesión se cerrará en
+        <strong id="inact-cuenta" style="color:var(--color-danger)">5:00</strong>.
+      </p>
+      <button id="inact-continuar" class="btn btn-primary" style="width:100%">
+        Continuar sesión
+      </button>
+    </div>`
+
+  document.body.appendChild(el)
+  modalInact = el
+
+  // Cuenta regresiva visual
+  intervalDisplay = setInterval(() => {
+    segsRestantes--
+    const min  = String(Math.floor(segsRestantes / 60)).padStart(2, '0')
+    const segs = String(segsRestantes % 60).padStart(2, '0')
+    const el = document.getElementById('inact-cuenta')
+    if (el) el.textContent = `${min}:${segs}`
+    if (segsRestantes <= 0) clearInterval(intervalDisplay)
+  }, 1000)
+
+  // Auto-logout al cabo de 5 min
+  timerCuentaRegr = setTimeout(async () => {
+    cerrarModalInactividad()
+    await logout()
+    const errEl = document.getElementById('login-error')
+    if (errEl) {
+      errEl.textContent = 'Tu sesión se cerró por inactividad (30 min).'
+      errEl.classList.remove('hidden')
+    }
+  }, CUENTA_REGR_MS)
+
+  document.getElementById('inact-continuar').addEventListener('click', () => {
+    cerrarModalInactividad()
+    iniciarTimerInactividad()
+  })
+}
+
+function cerrarModalInactividad() {
+  clearTimeout(timerCuentaRegr)
+  clearInterval(intervalDisplay)
+  timerCuentaRegr = null
+  intervalDisplay = null
+  if (modalInact) { modalInact.remove(); modalInact = null }
+}
+
+const EVENTOS_ACTIVIDAD = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+
+// ─────────────────────────────────────────────────────────────
 // resolverSesion — extrae datos del usuario desde app_metadata
 // app_metadata es seteado por el servidor (Edge Function crear-tenant/crear-usuario)
 // y viene embebido en el JWT — sin consultas adicionales a la DB.
@@ -31,6 +128,11 @@ function resolverSesion(session) {
 // Escuchar cambios de sesión — punto de entrada de la app
 // ─────────────────────────────────────────────────────────────
 supabase.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    mostrarResetPassword()
+    return
+  }
+
   if (!session) {
     set('user',   null)
     set('tenant', null)
@@ -55,9 +157,24 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     mostrarApp()
     navigate(window.location.hash.slice(1) || 'dashboard')
 
+    // Iniciar timer de inactividad y escuchar eventos de actividad
+    EVENTOS_ACTIVIDAD.forEach(ev => window.addEventListener(ev, resetearInactividad, { passive: true }))
+    iniciarTimerInactividad()
+
   } catch (err) {
     console.error('[auth] Error resolviendo sesión:', err.message)
     mostrarErrorSesion(err.message)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────
+// Refresca claims al volver a la pestaña (H9 — JWT obsoleto)
+// Si el admin cambió rol/empresas_ids vía script de provisión,
+// el nuevo JWT se carga sin que el usuario tenga que re-loguear.
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    supabase.auth.refreshSession().catch(() => {})
   }
 })
 
@@ -70,6 +187,9 @@ async function login(email, password) {
 }
 
 async function logout() {
+  detenerTimerInactividad()
+  cerrarModalInactividad()
+  EVENTOS_ACTIVIDAD.forEach(ev => window.removeEventListener(ev, resetearInactividad))
   set('user',    null)
   set('tenant',  null)
   set('empresa', null)
@@ -104,6 +224,14 @@ function mostrarErrorSesion(mensaje) {
   }
   mostrarLogin()
   supabase.auth.signOut().catch(() => {})
+}
+
+function mostrarResetPassword() {
+  document.getElementById('auth-screen').classList.remove('hidden')
+  document.getElementById('app-shell').classList.add('hidden')
+  document.getElementById('login-form').classList.add('hidden')
+  document.getElementById('forgot-form').classList.add('hidden')
+  document.getElementById('reset-form').classList.remove('hidden')
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -144,5 +272,97 @@ function mensajeError(err) {
   if (msg.includes('too many requests'))          return 'Demasiados intentos. Espera unos minutos.'
   return 'Error al iniciar sesión. Intenta de nuevo.'
 }
+
+// ─────────────────────────────────────────────────────────────
+// Flujo ¿Olvidaste tu contraseña?
+// ─────────────────────────────────────────────────────────────
+document.getElementById('forgot-link').addEventListener('click', () => {
+  document.getElementById('login-form').classList.add('hidden')
+  document.getElementById('forgot-form').classList.remove('hidden')
+  document.getElementById('forgot-error').classList.add('hidden')
+  document.getElementById('forgot-ok').classList.add('hidden')
+})
+
+document.getElementById('back-to-login').addEventListener('click', () => {
+  document.getElementById('forgot-form').classList.add('hidden')
+  document.getElementById('login-form').classList.remove('hidden')
+})
+
+document.getElementById('forgot-form').addEventListener('submit', async e => {
+  e.preventDefault()
+  const email   = document.getElementById('forgot-email').value.trim()
+  const btn     = document.getElementById('forgot-btn')
+  const btnText = document.getElementById('forgot-btn-text')
+  const spinner = document.getElementById('forgot-btn-spinner')
+  const errEl   = document.getElementById('forgot-error')
+  const okEl    = document.getElementById('forgot-ok')
+
+  errEl.classList.add('hidden')
+  okEl.classList.add('hidden')
+  btn.disabled        = true
+  btnText.textContent = 'Enviando...'
+  spinner.classList.remove('hidden')
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  })
+
+  btn.disabled        = false
+  btnText.textContent = 'Enviar enlace'
+  spinner.classList.add('hidden')
+
+  if (error) {
+    errEl.textContent = 'No se pudo enviar el enlace. Verifica el correo e intenta de nuevo.'
+    errEl.classList.remove('hidden')
+  } else {
+    okEl.textContent = 'Enlace enviado. Revisa tu correo (incluyendo spam).'
+    okEl.classList.remove('hidden')
+  }
+})
+
+// ─────────────────────────────────────────────────────────────
+// Formulario de nueva contraseña (tras hacer clic en el enlace del correo)
+// ─────────────────────────────────────────────────────────────
+document.getElementById('reset-form').addEventListener('submit', async e => {
+  e.preventDefault()
+  const pwd     = document.getElementById('reset-password').value
+  const pwd2    = document.getElementById('reset-password2').value
+  const btn     = document.getElementById('reset-btn')
+  const btnText = document.getElementById('reset-btn-text')
+  const spinner = document.getElementById('reset-btn-spinner')
+  const errEl   = document.getElementById('reset-error')
+
+  errEl.classList.add('hidden')
+
+  if (pwd !== pwd2) {
+    errEl.textContent = 'Las contraseñas no coinciden.'
+    errEl.classList.remove('hidden')
+    return
+  }
+  if (pwd.length < 8) {
+    errEl.textContent = 'La contraseña debe tener al menos 8 caracteres.'
+    errEl.classList.remove('hidden')
+    return
+  }
+
+  btn.disabled        = true
+  btnText.textContent = 'Guardando...'
+  spinner.classList.remove('hidden')
+
+  const { error } = await supabase.auth.updateUser({ password: pwd })
+
+  btn.disabled        = false
+  btnText.textContent = 'Guardar nueva contraseña'
+  spinner.classList.add('hidden')
+
+  if (error) {
+    errEl.textContent = 'No se pudo actualizar la contraseña. El enlace puede haber expirado.'
+    errEl.classList.remove('hidden')
+  } else {
+    // Sesión ya activa tras updateUser — onAuthStateChange lleva al dashboard
+    await supabase.auth.signOut()
+    mostrarLogin()
+  }
+})
 
 export { login, logout }

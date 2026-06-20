@@ -64,14 +64,19 @@ async function render(container) {
 }
 
 let _empresas = []
+let _asesores = {}  // { [uuid]: nombre } para resolver asesor_id → nombre
 
 async function cargarEmpresas() {
-  const user = get('user')
   const wrap = document.getElementById('empresas-tabla-wrap')
   if (!wrap) return
 
   try {
-    _empresas = await db.list('empresas', { eq: { activa: true }, order: 'nombre' })
+    const [empresas, usuarios] = await Promise.all([
+      db.list('empresas', { eq: { activa: true }, order: 'nombre' }),
+      db.list('usuarios', { eq: { activo: true } }),
+    ])
+    _asesores = Object.fromEntries(usuarios.map(u => [u.id, u.nombre]))
+    _empresas = empresas
     renderTabla(_empresas)
   } catch (err) {
     wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, 'cargar empresas')}</div>`
@@ -139,7 +144,7 @@ function renderTabla(lista) {
                 <td class="text-sm text-center">${esc(em.trab || 0)}</td>
                 <td><span class="badge ${colNivel}">Nivel ${nivel}</span></td>
                 <td class="text-sm">${esc(em.arl || '—')}</td>
-                <td class="text-sm">${esc(em.asesorId || '—')}</td>
+                <td class="text-sm">${esc(_asesores[em.asesorId] || '—')}</td>
                 <td class="text-sm ${venceProx ? 'text-warning' : ''}">
                   ${esc(em.contratoFin || '—')}${venceProx ? ' ⚠️' : ''}
                 </td>

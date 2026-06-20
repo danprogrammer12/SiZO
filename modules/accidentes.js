@@ -1,7 +1,12 @@
 // SIZO — Accidentalidad (Fase 3)
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { abrirVerificadorARL, abrirPortalADRES } from '../components/verificar-arl.js'
 
 const { render } = crearModulo({
+  botones: [
+    { label: '🔍 Consultar ARL', clase: 'btn-secondary', onClick: abrirVerificadorARL },
+    { label: '🌐 Consultar ADRES', clase: 'btn-secondary', onClick: abrirPortalADRES },
+  ],
   tabla: 'accidentes',
   titulo: 'Accidentalidad',
   subtitulo: 'Registro y seguimiento de accidentes de trabajo',

@@ -4,10 +4,11 @@
 // ─────────────────────────────────────────────────────────────
 
 const state = {
-  user:       null,   // Firebase Auth user + claims custom
-  tenant:     null,   // { id, nombre, tipo, plan }
+  user:       null,   // { uid, email, nombre, tenantId, rol, empresas }
+  tenant:     null,   // { id }
   empresa:    null,   // empresa seleccionada en topbar
-  periodo:    null,   // { year: 2025, month: 5 } período activo
+  periodo:    null,   // { year, month } período activo
+  _empresas:  [],     // lista cacheada de empresas del tenant (topbar)
   darkMode:   false,
   sidebarCollapsed: false,
 }

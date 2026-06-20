@@ -27,12 +27,12 @@ Hay **2 hallazgos críticos y 5 graves** a resolver antes de crecer o salir a pr
 | H7 | Sin Content-Security-Policy ni headers de seguridad | 2 | 🟠 Grave — ✅ RESUELTO 2026-06-15 |
 | H8 | Sin paginación + `select('*')` en todas las listas | 1,4 | ✅ Resuelto (parcial) |
 | H9 | `empresas_ids`/`role` del JWT desincronizable de la tabla (authz obsoleta) | 2 | 🟡 Medio |
-| H10 | Funciones RLS evaluadas por fila (`user_empresas()` con subquery) | 4 | 🟡 Medio |
-| H11 | Test de indicadores reimplementa la fórmula en vez de importar el motor | 6 | 🟡 Medio |
-| H12 | Fórmulas de indicadores a verificar vs. Dec. 1072 / conteo "26 KPIs" | 5 | 🟡 Medio |
-| H13 | Recuperación de contraseña no implementada | 2 | 🟡 Medio |
-| H14 | Comentarios/nombres obsoletos ("Firebase"); clave `_empresas` no declarada | 1 | 🟢 Menor |
-| H15 | `asesor_id` se muestra como UUID crudo; gating de rol del router es cosmético | 1 | 🟢 Menor |
+| H10 | Funciones RLS evaluadas por fila (`user_empresas()` con subquery) | 4 | ✅ Resuelto |
+| H11 | Test de indicadores reimplementa la fórmula en vez de importar el motor | 6 | ✅ Resuelto |
+| H12 | Fórmulas de indicadores a verificar vs. Dec. 1072 / conteo "26 KPIs" | 5 | ✅ Resuelto |
+| H13 | Recuperación de contraseña no implementada | 2 | ✅ Resuelto |
+| H14 | Comentarios/nombres obsoletos ("Firebase"); clave `_empresas` no declarada | 1 | ✅ Resuelto |
+| H15 | `asesor_id` se muestra como UUID crudo; gating de rol del router es cosmético | 1 | ✅ Resuelto |
 
 ---
 
@@ -262,6 +262,25 @@ Para `X-Frame-Options`/`nosniff`/HSTS/`frame-ancestors` reales en prod, configur
 
 **Pendiente de confirmación manual:** recargar en el navegador y revisar la consola: no debe
 haber violaciones de CSP que rompan login, carga de datos (Supabase) ni fuentes.
+
+### H10 — Funciones RLS evaluadas por fila — ✅ RESUELTO (2026-06-19)
+
+**Fix aplicado:** migración `supabase/migrations/003_h10_optimizar_rls.sql`.
+
+- **Helpers `can_read_empresa` / `can_write_empresa`** reescritos para envolver sus llamadas internas en `(select ...)`:
+  ```sql
+  -- antes:
+  select is_admin() or (emp_id::text = any(user_empresas()))
+  -- después:
+  select (select is_admin()) or (emp_id::text = any((select user_empresas())))
+  ```
+  PostgreSQL trata la subconsulta como `InitPlan`: la evalúa una vez por query en lugar de una vez por fila.
+- **Todas las políticas directas** (`tenant_id()`, `is_admin()` sin argumento de fila) igualmente envueltas: `tenant_id::text = (select tenant_id())`, `(select is_admin())`.
+- Cubre 14 tablas + 35 políticas — ninguna requirió cambio en código JS de la app.
+
+**Impacto esperado:** mejora lineal con el volumen de filas. Con 500 filas (límite H8) y 5 tablas en un dashboard típico, `user_empresas()` y `is_admin()` pasan de ejecutarse ~2500 veces a 5 veces por carga de página.
+
+---
 
 ### H8 — Sin paginación, `select('*')` en todas las listas — ✅ RESUELTO (parcial) (2026-06-16)
 

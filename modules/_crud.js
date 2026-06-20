@@ -64,17 +64,22 @@ export function crearModulo(cfg) {
           <h2 class="page-title">${cfg.titulo}</h2>
           <p class="page-subtitle">${empresa ? empresa.nombre : cfg.subtitulo}</p>
         </div>
-        ${puedeEscribir ? `<button class="btn btn-primary" id="crud-nuevo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg> ${cfg.labelNuevo || 'Nuevo'}
-        </button>` : ''}
+        <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+          ${(cfg.botones || []).map((b, i) => `<button class="btn ${b.clase || 'btn-secondary'}" id="crud-extra-${i}">${b.label}</button>`).join('')}
+          ${puedeEscribir ? `<button class="btn btn-primary" id="crud-nuevo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg> ${cfg.labelNuevo || 'Nuevo'}
+          </button>` : ''}
+        </div>
       </div>
       <div id="crud-tabla"><div style="text-align:center;padding:var(--space-12)"><div class="spinner spinner-lg"></div></div></div>
     `
 
     if (puedeEscribir)
       document.getElementById('crud-nuevo').addEventListener('click', () => abrirForm(null))
+    ;(cfg.botones || []).forEach((b, i) =>
+      document.getElementById(`crud-extra-${i}`)?.addEventListener('click', b.onClick))
 
     await cargar()
   }

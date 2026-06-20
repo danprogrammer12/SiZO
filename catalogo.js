@@ -1,14 +1,16 @@
 // ─────────────────────────────────────────────────────────────
 // SIZO — Catálogo de indicadores (metas y fichas por defecto)
-// Valores tomados del prototipo aprobado. inv:true = menor es mejor.
-// Normativa: Dec. 1072/2015 · Res. 0312/2019.
+// 20 KPIs. inv:true = menor es mejor.
+// Normativa principal: Dec. 1072/2015 · Res. 0312/2019.
+// IFA/IFM/ISA usan base 240.000 HHT (Art. 2.2.4.1.7 Dec. 1072).
+// HHT se estima como: N° trabajadores × días trabajados × 8 hrs/día.
 // ─────────────────────────────────────────────────────────────
 
 const CATALOGO = {
-  ifa:     { nom: 'IFA — Frecuencia de Accidentalidad', meta: 0,   inv: true,  tipo: 'Resultado', u: 'AT/100 trab.', periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015', formula: 'AT ocurridos / N° trabajadores × 100' },
-  ifm:     { nom: 'IFM — AT Mortales',                  meta: 0,   inv: true,  tipo: 'Resultado', u: '%',           periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015', formula: 'AT mortales / N° trabajadores × 100' },
-  isa:     { nom: 'ISA — Severidad de Accidentalidad',  meta: 0,   inv: true,  tipo: 'Resultado', u: 'Días/100 trab.', periodicidad: 'Mensual', normativa: 'Dec. 1072/2015', formula: 'Días cargados / N° trabajadores × 100' },
-  ili:     { nom: 'ILI — Lesiones Incapacitantes',      meta: 0,   inv: true,  tipo: 'Resultado', u: 'índice',      periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015', formula: '(IFA × ISA) / 1000' },
+  ifa:     { nom: 'IFA — Frecuencia de Accidentalidad', meta: 0,   inv: true,  tipo: 'Resultado', u: 'AT/240.000 HHT', periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015 Art. 2.2.4.1.7', formula: '(AT ocurridos × 240.000) / HHT' },
+  ifm:     { nom: 'IFM — AT Mortales',                  meta: 0,   inv: true,  tipo: 'Resultado', u: 'Mort/240.000 HHT', periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015 Art. 2.2.4.1.7', formula: '(AT mortales × 240.000) / HHT' },
+  isa:     { nom: 'ISA — Severidad de Accidentalidad',  meta: 0,   inv: true,  tipo: 'Resultado', u: 'Días/240.000 HHT', periodicidad: 'Mensual', normativa: 'Dec. 1072/2015 Art. 2.2.4.1.7', formula: '(Días cargados × 240.000) / HHT' },
+  ili:     { nom: 'ILI — Lesiones Incapacitantes',      meta: 0,   inv: true,  tipo: 'Resultado', u: 'índice',      periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015 Art. 2.2.4.1.7', formula: '(IFA × ISA) / 1.000' },
   aus:     { nom: 'Ausentismo total',                   meta: 5,   inv: true,  tipo: 'Resultado', u: '%',           periodicidad: 'Mensual',  normativa: 'Res. 0312/2019', formula: 'Días ausentismo / (N° trab. × días programados) × 100' },
   plan:    { nom: 'Cumplimiento Plan de Trabajo',       meta: 80,  inv: false, tipo: 'Proceso',   u: '%',           periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015 Art. 2.2.4.6.8', formula: 'Actividades ejecutadas / programadas × 100' },
   iper:    { nom: 'Controles IPER implementados',       meta: 100, inv: false, tipo: 'Proceso',   u: '%',           periodicidad: 'Trimestral', normativa: 'Dec. 1072/2015', formula: 'Controles implementados / definidos × 100' },
