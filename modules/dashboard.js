@@ -18,14 +18,34 @@ const LABEL_SEM = { verde:'Bien', amarillo:'Atención', naranja:'Alerta', rojo:'
 // KPIs que aparecen en la tabla consolidada
 const KPI_TABLA = ['plan', 'aus', 'ifa', 'isa']
 
-let _unsub = []
+let _unsub      = []
+let _pintando   = false
+let _pendiente  = false
 
 async function render(container) {
   _unsub.forEach(fn => fn()); _unsub = []
+  _pintando  = false
+  _pendiente = false
   container.innerHTML = `<div id="dash-root"></div>`
-  const pintar = () => pintar_(document.getElementById('dash-root'))
+  const pintar = () => programarPintado()
   _unsub.push(subscribe('empresa', pintar))
   _unsub.push(subscribe('periodo', pintar))
+}
+
+// Colapsa llamadas simultáneas: si ya hay un render en curso, marca pendiente
+// y vuelve a pintar al terminar. Evita race conditions por doble subscribe.
+async function programarPintado() {
+  if (_pintando) { _pendiente = true; return }
+  _pintando = true
+  try {
+    await pintar_(document.getElementById('dash-root'))
+  } finally {
+    _pintando = false
+    if (_pendiente) {
+      _pendiente = false
+      programarPintado()
+    }
+  }
 }
 
 async function pintar_(root) {
