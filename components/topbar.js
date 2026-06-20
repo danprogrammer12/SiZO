@@ -103,11 +103,11 @@ async function cargarEmpresas(user) {
       return
     }
 
-    select.innerHTML = empresas.map(em =>
-      `<option value="${esc(em.id)}">${esc(em.nombre)}</option>`
-    ).join('')
+    select.innerHTML =
+      `<option value="">Vista general</option>` +
+      empresas.map(em => `<option value="${esc(em.id)}">${esc(em.nombre)}</option>`).join('')
 
-    set('empresa', empresas[0])
+    set('empresa', null)
   } catch (err) {
     console.error('Error cargando empresas:', err)
   }
