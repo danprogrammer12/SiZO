@@ -42,7 +42,6 @@ async function render(container) {
         </button>
       </div>
     </div>
-
     <div id="usuarios-tabla-wrap">
       <div style="text-align:center;padding:var(--space-12)">
         <div class="spinner spinner-lg"></div>
@@ -54,15 +53,23 @@ async function render(container) {
   await cargarUsuarios()
 }
 
-let _usuarios = []
+let _usuarios  = []
+let _empresas  = []
+
+async function cargarTodo() {
+  const [usuarios, empresas] = await Promise.all([
+    db.list('usuarios',  { order: 'nombre' }),
+    db.list('empresas',  { order: 'nombre' }),
+  ])
+  _usuarios = usuarios
+  _empresas = empresas
+}
 
 async function cargarUsuarios() {
-  const user = get('user')
   const wrap = document.getElementById('usuarios-tabla-wrap')
   if (!wrap) return
-
   try {
-    _usuarios = await db.list('usuarios', { order: 'nombre' })
+    await cargarTodo()
     renderTabla(_usuarios)
   } catch (err) {
     wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, 'cargar usuarios')}</div>`
@@ -78,10 +85,13 @@ function renderTabla(lista) {
       <div class="empty-state">
         <div class="empty-state-icon">👥</div>
         <h3 class="empty-state-title">Sin usuarios</h3>
-        <p class="text-muted">Crea el primer usuario desde Supabase → Authentication</p>
+        <p class="text-muted">Crea el primer usuario con el botón "Nuevo usuario"</p>
       </div>`
     return
   }
+
+  // Mapa id → nombre para resolver empresas
+  const empMap = Object.fromEntries(_empresas.map(e => [e.id, e.nombre]))
 
   wrap.innerHTML = `
     <div class="table-wrapper">
@@ -93,7 +103,6 @@ function renderTabla(lista) {
             <th>Rol</th>
             <th>Empresas asignadas</th>
             <th>Estado</th>
-            <th>Último acceso</th>
             <th style="width:80px">Acciones</th>
           </tr>
         </thead>
@@ -102,9 +111,20 @@ function renderTabla(lista) {
             const estado = u.activo
               ? '<span class="badge badge-success">Activo</span>'
               : '<span class="badge badge-neutral">Inactivo</span>'
-            const acceso = u.ultimoAcceso
-              ? new Date(u.ultimoAcceso).toLocaleDateString('es-CO')
-              : '—'
+
+            let empresasCell
+            if (u.rol === 'ADMIN') {
+              empresasCell = '<span class="text-muted">Todas</span>'
+            } else if (u.empresasIds?.length) {
+              const nombres = u.empresasIds
+                .map(id => esc(empMap[id] || id))
+                .join(', ')
+              empresasCell = `<span title="${nombres}" style="max-width:200px;display:inline-block;
+                overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nombres}</span>`
+            } else {
+              empresasCell = '<span class="badge badge-warning">Sin asignar</span>'
+            }
+
             return `
               <tr>
                 <td>
@@ -119,17 +139,10 @@ function renderTabla(lista) {
                 </td>
                 <td class="text-sm">${esc(u.email)}</td>
                 <td><span class="badge ${ROL_BADGE[u.rol] || 'badge-neutral'}">${esc(ROL_LABELS[u.rol] || u.rol)}</span></td>
-                <td class="text-sm">
-                  ${u.rol === 'ADMIN'
-                    ? '<span class="text-muted">Todas</span>'
-                    : u.empresasIds?.length
-                      ? `${u.empresasIds.length} empresa${u.empresasIds.length !== 1 ? 's' : ''}`
-                      : '<span class="text-muted">Sin asignar</span>'}
-                </td>
+                <td class="text-sm">${empresasCell}</td>
                 <td>${estado}</td>
-                <td class="text-sm">${acceso}</td>
                 <td>
-                  <button class="btn btn-ghost btn-sm btn-editar-usuario" data-uid="${esc(u.uid)}" title="Editar">
+                  <button class="btn btn-ghost btn-sm btn-editar-usuario" data-uid="${esc(u.id)}" title="Editar">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -148,100 +161,56 @@ function renderTabla(lista) {
 
   wrap.querySelectorAll('.btn-editar-usuario').forEach(btn => {
     btn.addEventListener('click', () => {
-      const u = _usuarios.find(u => u.uid === btn.dataset.uid)
+      const u = _usuarios.find(u => u.id === btn.dataset.uid)
       if (u) abrirFormularioEdicion(u)
     })
   })
 }
 
-// ── Edición de datos del perfil (sin cambiar rol/Claims — eso requiere CF) ──
-function abrirFormularioEdicion(usuario) {
-  const content = `
-    <form id="form-usuario" novalidate>
-      <div class="alert alert-info" style="margin-bottom:var(--space-4)">
-        <span>Cambiar rol o empresas asignadas requiere el script de provisión
-        (actualiza el app_metadata del JWT). Aquí puedes editar los datos de perfil.</span>
-      </div>
+// ── Helpers UI ───────────────────────────────────────────────────────────────
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nombre completo</label>
-          <input name="nombre" value="${esc(usuario.nombre || '')}" />
-        </div>
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input name="tel" value="${esc(usuario.tel || '')}" />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Ciudad</label>
-          <input name="ciudad" value="${esc(usuario.ciudad || '')}" />
-        </div>
-        <div class="form-group">
-          <label>Fecha de nacimiento</label>
-          <input name="bday" type="date" value="${esc(usuario.bday || '')}" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>LinkedIn</label>
-        <input name="linkedin" value="${esc(usuario.linkedin || '')}" placeholder="https://linkedin.com/in/..." />
-      </div>
-
-      <div class="divider"></div>
-      <div class="form-group">
-        <label>Rol actual</label>
-        <input value="${esc(ROL_LABELS[usuario.rol] || usuario.rol)}" disabled style="opacity:.6;cursor:not-allowed" />
-        <p class="form-hint">Cambiar rol requiere el script de provisión (service role)</p>
-      </div>
-
-      <div id="form-usuario-error" class="form-error hidden"></div>
-    </form>
-  `
-
-  modal.open({
-    title:   `Editar — ${usuario.nombre || usuario.email}`,
-    content,
-    footer: `
-      <button class="btn btn-secondary" id="btn-cancelar-usr">Cancelar</button>
-      <button class="btn btn-primary"   id="btn-guardar-usr">Guardar cambios</button>
-    `,
-    size: 'md',
-  })
-
-  document.getElementById('btn-cancelar-usr').addEventListener('click', () => modal.close())
-  document.getElementById('btn-guardar-usr').addEventListener('click', () => guardarUsuario(usuario))
-}
-
-async function guardarUsuario(usuario) {
-  const user  = get('user')
-  const form  = document.getElementById('form-usuario')
-  const errEl = document.getElementById('form-usuario-error')
-  const btn   = document.getElementById('btn-guardar-usr')
-
-  const data = Object.fromEntries(new FormData(form).entries())
-
-  btn.disabled    = true
-  btn.textContent = 'Guardando...'
-
-  try {
-    await db.update('usuarios', usuario.uid, {
-      nombre:    data.nombre?.trim() || usuario.nombre,
-      tel:       data.tel?.trim() || null,
-      ciudad:    data.ciudad?.trim() || null,
-      bday:      data.bday || null,
-      linkedin:  data.linkedin?.trim() || null,
-    })
-    toast.success('Usuario actualizado')
-    modal.close()
-    await cargarUsuarios()
-  } catch (err) {
-    errEl.textContent = errorUsuario(err, 'guardar usuario')
-    errEl.classList.remove('hidden')
-    btn.disabled    = false
-    btn.textContent = 'Guardar cambios'
+function checkboxEmpresas(seleccionadas = [], disabled = false) {
+  if (_empresas.length === 0) {
+    return `<p class="text-sm text-muted">No hay empresas creadas aún.</p>`
   }
+  return `
+    <div style="display:flex;flex-direction:column;gap:var(--space-2);
+      max-height:180px;overflow-y:auto;padding:var(--space-2);
+      border:1px solid var(--color-border);border-radius:var(--radius-md)">
+      ${_empresas.map(e => `
+        <label style="display:flex;align-items:center;gap:var(--space-2);cursor:${disabled ? 'default' : 'pointer'}">
+          <input type="checkbox" name="empresa_ids" value="${esc(e.id)}"
+            ${seleccionadas.includes(e.id) ? 'checked' : ''}
+            ${disabled ? 'disabled' : ''}>
+          <span class="text-sm">${esc(e.nombre)}</span>
+        </label>`).join('')}
+    </div>`
 }
+
+function leerEmpresasSeleccionadas() {
+  return [...document.querySelectorAll('input[name="empresa_ids"]:checked')]
+    .map(cb => cb.value)
+}
+
+async function getToken() {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Sin sesión activa')
+  return session.access_token
+}
+
+async function llamarEdgeFunction(endpoint, body) {
+  const token = await getToken()
+  const res = await fetch(`${FUNCTIONS_URL}/${endpoint}`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body:    JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || `Error ${res.status}`)
+  return json
+}
+
+// ── Formulario de creación ───────────────────────────────────────────────────
 
 function abrirFormularioCreacion() {
   modal.open({
@@ -268,9 +237,13 @@ function abrirFormularioCreacion() {
             <option value="CONSULTA">Consulta</option>
           </select>
         </div>
+        <div id="nuevo-empresas-wrap" class="form-group hidden">
+          <label>Empresas asignadas</label>
+          ${checkboxEmpresas()}
+          <p class="form-hint">El ASESOR y CONSULTA solo ven datos de las empresas asignadas.</p>
+        </div>
         <div class="alert alert-info" style="margin-top:var(--space-3)">
           El usuario recibirá un correo para establecer su contraseña.
-          Las empresas asignadas se pueden configurar después desde la edición de perfil.
         </div>
         <div id="form-crear-error" class="form-error hidden"></div>
       </form>
@@ -281,16 +254,23 @@ function abrirFormularioCreacion() {
     `,
   })
 
+  // Mostrar/ocultar selector de empresas según rol
+  document.getElementById('nuevo-rol').addEventListener('change', e => {
+    const wrap = document.getElementById('nuevo-empresas-wrap')
+    wrap.classList.toggle('hidden', e.target.value === 'ADMIN' || e.target.value === '')
+  })
+
   document.getElementById('btn-cancelar-crear').addEventListener('click', () => modal.close())
   document.getElementById('btn-guardar-crear').addEventListener('click', ejecutarCrearUsuario)
 }
 
 async function ejecutarCrearUsuario() {
-  const nombre  = document.getElementById('nuevo-nombre')?.value.trim()
-  const email   = document.getElementById('nuevo-email')?.value.trim()
-  const rol     = document.getElementById('nuevo-rol')?.value
-  const errEl   = document.getElementById('form-crear-error')
-  const btn     = document.getElementById('btn-guardar-crear')
+  const nombre     = document.getElementById('nuevo-nombre')?.value.trim()
+  const email      = document.getElementById('nuevo-email')?.value.trim()
+  const rol        = document.getElementById('nuevo-rol')?.value
+  const empresasIds = rol !== 'ADMIN' ? leerEmpresasSeleccionadas() : []
+  const errEl      = document.getElementById('form-crear-error')
+  const btn        = document.getElementById('btn-guardar-crear')
 
   errEl.classList.add('hidden')
 
@@ -304,21 +284,7 @@ async function ejecutarCrearUsuario() {
   btn.textContent = 'Creando...'
 
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('Sin sesión activa')
-
-    const res = await fetch(`${FUNCTIONS_URL}/crear-usuario`, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ nombre, email, rol, empresasIds: [] }),
-    })
-
-    const json = await res.json()
-    if (!res.ok) throw new Error(json.error || `Error ${res.status}`)
-
+    await llamarEdgeFunction('crear-usuario', { nombre, email, rol, empresasIds })
     toast.success(`Usuario ${esc(nombre)} creado. Se envió un enlace de acceso al correo.`)
     modal.close()
     await cargarUsuarios()
@@ -327,6 +293,121 @@ async function ejecutarCrearUsuario() {
     errEl.classList.remove('hidden')
     btn.disabled    = false
     btn.textContent = 'Crear usuario'
+  }
+}
+
+// ── Formulario de edición ────────────────────────────────────────────────────
+
+function abrirFormularioEdicion(usuario) {
+  const esAdmin = usuario.rol === 'ADMIN'
+
+  modal.open({
+    title:   `Editar — ${esc(usuario.nombre || usuario.email)}`,
+    size:    'md',
+    content: `
+      <form id="form-usuario" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input name="nombre" value="${esc(usuario.nombre || '')}" />
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input name="tel" value="${esc(usuario.tel || '')}" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ciudad</label>
+            <input name="ciudad" value="${esc(usuario.ciudad || '')}" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de nacimiento</label>
+            <input name="bday" type="date" value="${esc(usuario.bday || '')}" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>LinkedIn</label>
+          <input name="linkedin" value="${esc(usuario.linkedin || '')}" placeholder="https://linkedin.com/in/..." />
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-group">
+          <label>Rol</label>
+          <select id="edit-rol" name="rol">
+            <option value="ADMIN"   ${usuario.rol === 'ADMIN'   ? 'selected' : ''}>Administrador</option>
+            <option value="ASESOR"  ${usuario.rol === 'ASESOR'  ? 'selected' : ''}>Asesor SST</option>
+            <option value="CONSULTA"${usuario.rol === 'CONSULTA'? 'selected' : ''}>Consulta</option>
+          </select>
+        </div>
+
+        <div id="edit-empresas-wrap" class="form-group ${esAdmin ? 'hidden' : ''}">
+          <label>Empresas asignadas</label>
+          ${checkboxEmpresas(usuario.empresasIds || [])}
+          <p class="form-hint">El ASESOR y CONSULTA solo ven datos de las empresas seleccionadas.</p>
+        </div>
+
+        <div id="form-usuario-error" class="form-error hidden"></div>
+      </form>
+    `,
+    footer: `
+      <button class="btn btn-secondary" id="btn-cancelar-usr">Cancelar</button>
+      <button class="btn btn-primary"   id="btn-guardar-usr">Guardar cambios</button>
+    `,
+  })
+
+  document.getElementById('edit-rol').addEventListener('change', e => {
+    const wrap = document.getElementById('edit-empresas-wrap')
+    wrap.classList.toggle('hidden', e.target.value === 'ADMIN')
+  })
+
+  document.getElementById('btn-cancelar-usr').addEventListener('click', () => modal.close())
+  document.getElementById('btn-guardar-usr').addEventListener('click', () => guardarUsuario(usuario))
+}
+
+async function guardarUsuario(usuario) {
+  const form   = document.getElementById('form-usuario')
+  const errEl  = document.getElementById('form-usuario-error')
+  const btn    = document.getElementById('btn-guardar-usr')
+  const nuevoRol  = document.getElementById('edit-rol').value
+  const empresasIds = nuevoRol !== 'ADMIN' ? leerEmpresasSeleccionadas() : []
+
+  const data = Object.fromEntries(new FormData(form).entries())
+
+  btn.disabled    = true
+  btn.textContent = 'Guardando...'
+
+  try {
+    // Actualizar perfil en tabla usuarios (datos de perfil — no requiere service role)
+    await db.update('usuarios', usuario.id, {
+      nombre:   data.nombre?.trim() || usuario.nombre,
+      tel:      data.tel?.trim()    || null,
+      ciudad:   data.ciudad?.trim() || null,
+      bday:     data.bday           || null,
+      linkedin: data.linkedin?.trim()|| null,
+    })
+
+    // Actualizar rol y empresas en app_metadata (requiere Edge Function)
+    const rolCambio      = nuevoRol !== usuario.rol
+    const empresasCambio = JSON.stringify(empresasIds.sort()) !== JSON.stringify((usuario.empresasIds || []).sort())
+
+    if (rolCambio || empresasCambio) {
+      await llamarEdgeFunction('actualizar-usuario', {
+        uid:       usuario.id,
+        rol:       nuevoRol,
+        empresasIds,
+      })
+    }
+
+    toast.success('Usuario actualizado')
+    modal.close()
+    await cargarUsuarios()
+  } catch (err) {
+    errEl.textContent = errorUsuario(err, 'guardar usuario')
+    errEl.classList.remove('hidden')
+    btn.disabled    = false
+    btn.textContent = 'Guardar cambios'
   }
 }
 
