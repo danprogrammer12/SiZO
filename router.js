@@ -84,6 +84,8 @@ window.addEventListener('popstate', () => {
   const ruta = (window.location.hash || '#dashboard').slice(1) || 'dashboard'
   if (ruta === 'dashboard' && get('empresa')) {
     set('empresa', null)
+    const sel = document.getElementById('topbar-empresa')
+    if (sel) sel.value = ''
     document.querySelectorAll('.nav-item').forEach(el => {
       el.classList.toggle('active', el.dataset.route === 'dashboard')
     })
