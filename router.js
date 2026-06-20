@@ -20,6 +20,7 @@ const routes = {
   'casos':        () => import('./modules/casos.js'),
   'maestro':      () => import('./modules/maestro.js'),
   'indicadores':  () => import('./modules/indicadores.js'),
+  'perfil':       () => import('./modules/perfil.js'),
 }
 
 // Control de acceso por rol — CAPA UX ÚNICAMENTE

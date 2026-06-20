@@ -88,6 +88,10 @@ function bindEvents() {
     if (btn) navigate(btn.dataset.route)
   })
 
+  document.getElementById('sidebar-user').addEventListener('click', () => {
+    navigate('perfil')
+  })
+
   document.getElementById('sidebar-logout').addEventListener('click', async () => {
     await logout()
   })
