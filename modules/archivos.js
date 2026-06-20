@@ -29,8 +29,8 @@ function cargarScript(src) {
 }
 
 async function cargarLibs() {
-  await cargarScript('/vendor/pdf-lib.min.js')
-  await cargarScript('/vendor/signature-pad.min.js')
+  await cargarScript(new URL('../vendor/pdf-lib.min.js', import.meta.url).href)
+  await cargarScript(new URL('../vendor/signature-pad.min.js', import.meta.url).href)
 }
 
 // ── Utilidades ────────────────────────────────────────────────
