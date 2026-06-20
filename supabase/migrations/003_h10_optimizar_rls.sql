@@ -9,11 +9,11 @@
 -- ─────────────────────────────────────────────────────────────
 create or replace function can_read_empresa(emp_id uuid)
 returns boolean language sql stable
-as $$ select (select is_admin()) or (emp_id::text = any((select user_empresas()))) $$;
+as $$ select (select is_admin()) or emp_id::text = any(user_empresas()) $$;
 
 create or replace function can_write_empresa(emp_id uuid)
 returns boolean language sql stable
-as $$ select (select is_admin()) or ((select is_asesor()) and emp_id::text = any((select user_empresas()))) $$;
+as $$ select (select is_admin()) or ((select is_asesor()) and emp_id::text = any(user_empresas())) $$;
 
 -- ─────────────────────────────────────────────────────────────
 -- 2. Reemplazar políticas que llaman tenant_id() / is_admin() por fila
