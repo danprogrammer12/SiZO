@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { route: 'empresas',    label: 'Empresas',          icon: icon_empresas },
   { route: 'usuarios',    label: 'Usuarios',           icon: icon_usuarios },
   { route: 'maestro',     label: 'Maestro',            icon: icon_maestro },
+  { route: 'archivos',    label: 'Archivos',           icon: icon_archivos },
   { divider: true, label: 'Revisión' },
   { route: 'auditoria',   label: 'Auditoría',          icon: icon_auditoria },
   { route: 'casos',       label: 'Casos Médicos',      icon: icon_casos, roles: ['ADMIN'] },
@@ -272,6 +273,7 @@ function icon_usuarios()    { return '<svg width="18" height="18" viewBox="0 0 2
 function icon_maestro()     { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M2 12h2m16 0h2M5.34 5.34L3.93 3.93M20.07 20.07l-1.41-1.41M12 2v2m0 16v2"/></svg>' }
 function icon_auditoria()   { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' }
 function icon_casos()       { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' }
+function icon_archivos()    { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' }
 function icon_chevron()     { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>' }
 function icon_logout()      { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' }
 
