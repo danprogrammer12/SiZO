@@ -8,7 +8,8 @@ import { CATALOGO, DESTACADOS, ficha }   from '../catalogo.js'
 import { lineChart }      from '../components/chart.js'
 import { esc }            from '../escape.js'
 import { errorUsuario }   from '../errores.js'
-import { generarInformePDF } from '../components/pdf-informe.js'
+import { generarInformePDF }  from '../components/pdf-informe.js'
+import { exportarMatrizExcel } from '../components/excel-informe.js'
 
 const MESES     = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const COLOR_SEM = { verde:'#22C55E', amarillo:'#F59E0B', naranja:'#FB923C', rojo:'#EF4444', neutral:'#94A3B8' }
@@ -221,6 +222,15 @@ async function pintarIndividual(root, empresa) {
         <p class="page-subtitle">${esc(empresa.nombre)} — ${MESES[month - 1]} ${year}</p>
       </div>
       <div style="display:flex;gap:var(--space-2)">
+        <button class="btn btn-secondary btn-sm" id="btn-excel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+          Exportar Excel
+        </button>
         <button class="btn btn-secondary btn-sm" id="btn-pdf">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -241,6 +251,27 @@ async function pintarIndividual(root, empresa) {
     set('empresa', null)
     const sel = document.getElementById('topbar-empresa')
     if (sel) sel.value = ''
+  })
+
+  document.getElementById('btn-excel').addEventListener('click', () => {
+    const btn = document.getElementById('btn-excel')
+    if (!btn) return
+    const orig = btn.innerHTML
+    btn.disabled    = true
+    btn.textContent = 'Exportando...'
+    try {
+      exportarMatrizExcel({
+        empresa,
+        seguimiento:  _segMesActual,
+        periodo:      get('periodo'),
+        asesorNombre: _asesorNombre,
+      })
+    } catch (err) {
+      console.error('[excel]', err)
+    } finally {
+      btn.disabled  = false
+      btn.innerHTML = orig
+    }
   })
 
   // Placeholder — se actualiza cuando carguen los datos
