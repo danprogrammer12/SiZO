@@ -76,6 +76,13 @@ async function render(container) {
         </p>
       </div>
       <div class="page-actions">
+        <button class="btn btn-ghost btn-icon" id="btn-ayuda-archivos" title="¿Cómo usar el gestor de archivos?">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </button>
         ${user.rol !== 'CONSULTA' ? `
           <button class="btn btn-primary" id="btn-subir-pdf">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px">
@@ -92,6 +99,7 @@ async function render(container) {
     </div>
   `
 
+  document.getElementById('btn-ayuda-archivos').addEventListener('click', abrirTutorial)
   if (user.rol !== 'CONSULTA') {
     document.getElementById('btn-subir-pdf').addEventListener('click', abrirSubir)
   }
@@ -319,47 +327,73 @@ async function abrirFirmar(archivo) {
     return
   }
 
+  // Generar URL firmada para vista previa (5 minutos)
+  let previewUrl = ''
+  const { data: signed } = await supabase.storage.from('documentos').createSignedUrl(archivo.storagePath, 300)
+  if (signed?.signedUrl) previewUrl = signed.signedUrl
+
   modal.open({
-    title: `Firmar / Notas`,
-    size: 'lg',
+    title: `Firmar / Notas — ${esc(archivo.nombre)}`,
+    size: 'xl',
     content: `
-      <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-bottom:var(--space-5)">
-        <strong style="color:var(--color-text-primary)">${esc(archivo.nombre)}</strong>
-        ${archivo.firmado ? '&nbsp;<span class="badge badge-success" style="font-size:10px">Ya firmado</span>' : ''}
-      </p>
+      <div class="firma-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
 
-      <div class="form-group">
-        <label class="form-label">Firma dibujada</label>
-        <div id="firma-canvas-outer" style="background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;position:relative">
-          <canvas id="firma-canvas" style="display:block;width:100%;height:180px;touch-action:none;cursor:crosshair"></canvas>
-          <span id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:14px;pointer-events:none;user-select:none">
-            Dibuja tu firma aquí
-          </span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
-          <button class="btn btn-sm btn-ghost" id="btn-limpiar-firma">Limpiar</button>
-          <span style="color:var(--color-text-secondary);font-size:13px">— o —</span>
-          <label class="btn btn-sm btn-outline" style="cursor:pointer;margin:0;font-weight:normal">
-            Subir imagen de firma
-            <input type="file" id="firma-imagen-input" accept="image/png,image/jpeg,image/jpg,image/webp" hidden>
+        <!-- Vista previa -->
+        <div>
+          <label class="form-label" style="margin-bottom:8px;display:block">
+            Vista previa
+            ${archivo.firmado ? '&nbsp;<span class="badge badge-success" style="font-size:10px">Ya firmado</span>' : ''}
           </label>
-          <span id="firma-imagen-nombre" style="font-size:12px;color:var(--color-text-secondary)"></span>
+          ${previewUrl
+            ? `<object data="${previewUrl}#toolbar=0&navpanes=0" type="application/pdf"
+                style="width:100%;height:420px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:#f8fafc">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:420px;gap:12px;color:var(--color-text-secondary);border:1px solid var(--color-border);border-radius:var(--radius-md)">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span style="font-size:13px">Tu navegador no puede previsualizar PDFs</span>
+                  <a href="${previewUrl}" target="_blank" class="btn btn-sm btn-outline">Abrir en nueva pestaña</a>
+                </div>
+              </object>`
+            : `<div style="display:flex;align-items:center;justify-content:center;height:420px;border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-text-secondary);font-size:13px">
+                No se pudo cargar la vista previa
+              </div>`}
         </div>
-      </div>
 
-      <div class="form-group">
-        <label class="form-label">Notas</label>
-        <textarea id="firma-notas" class="form-input" rows="4"
-          placeholder="Escribe aquí las notas que se incrustarán en el PDF…"
-          style="resize:vertical">${esc(archivo.notas || '')}</textarea>
-      </div>
+        <!-- Panel de firma -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Firma dibujada</label>
+            <div id="firma-canvas-outer" style="background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;position:relative">
+              <canvas id="firma-canvas" style="display:block;width:100%;height:140px;touch-action:none;cursor:crosshair"></canvas>
+              <span id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:13px;pointer-events:none;user-select:none">
+                Dibuja tu firma aquí
+              </span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
+              <button class="btn btn-sm btn-ghost" id="btn-limpiar-firma">Limpiar</button>
+              <span style="color:var(--color-text-secondary);font-size:12px">— o —</span>
+              <label class="btn btn-sm btn-outline" style="cursor:pointer;margin:0;font-weight:normal;font-size:12px">
+                Subir imagen
+                <input type="file" id="firma-imagen-input" accept="image/png,image/jpeg,image/jpg,image/webp" hidden>
+              </label>
+              <span id="firma-imagen-nombre" style="font-size:11px;color:var(--color-text-secondary)"></span>
+            </div>
+          </div>
 
-      <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
-        <div class="form-group" style="flex:0 0 140px;margin-bottom:0">
-          <label class="form-label">Insertar en página</label>
-          <input type="number" id="firma-pagina" class="form-input" value="1" min="1" max="9999">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Notas</label>
+            <textarea id="firma-notas" class="form-input" rows="4"
+              placeholder="Notas que se incrustarán en el PDF…"
+              style="resize:vertical;font-size:13px">${esc(archivo.notas || '')}</textarea>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:flex-end">
+            <div class="form-group" style="flex:0 0 120px;margin-bottom:0">
+              <label class="form-label">Página</label>
+              <input type="number" id="firma-pagina" class="form-input" value="1" min="1" max="9999">
+            </div>
+            <div style="font-size:12px;color:var(--color-text-secondary);padding-bottom:8px" id="firma-info-paginas">Cargando…</div>
+          </div>
         </div>
-        <div style="font-size:12px;color:var(--color-text-secondary);padding-bottom:8px" id="firma-info-paginas">Cargando PDF…</div>
       </div>
     `,
     footer: `
@@ -597,6 +631,74 @@ async function eliminarArchivo(archivo) {
   }
 }
 
+// ── Tutorial ──────────────────────────────────────────────────
+function abrirTutorial() {
+  const user = get('user')
+  const pasos = [
+    {
+      icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+      titulo: 'Subir un PDF',
+      desc: user.rol === 'CONSULTA'
+        ? 'Como CONSULTA puedes ver y descargar los archivos, pero no subir nuevos.'
+        : 'Haz clic en <strong>Subir PDF</strong>, selecciona el archivo, elige la empresa a la que pertenece y agrega una descripción opcional.',
+    },
+    {
+      icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+      titulo: 'Firmar el PDF',
+      desc: user.rol === 'CONSULTA'
+        ? 'Solo ADMIN y ASESOR pueden firmar documentos.'
+        : 'Haz clic en el ícono de <strong>lápiz</strong> en la fila del archivo. Se abrirá el panel de firma con la vista previa del documento a la izquierda.',
+    },
+    {
+      icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>`,
+      titulo: 'Vista previa',
+      desc: 'Antes de firmar puedes ver el PDF completo en el panel izquierdo del modal. Si tu navegador no lo renderiza, usa el botón <strong>Abrir en nueva pestaña</strong>.',
+    },
+    {
+      icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
+      titulo: 'Dibujar la firma',
+      desc: 'En el panel derecho, dibuja tu firma en el recuadro blanco con el mouse o dedo. También puedes subir una <strong>imagen PNG/JPG</strong> de tu firma si prefieres.',
+    },
+    {
+      icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+      titulo: 'Agregar notas',
+      desc: 'En el campo <strong>Notas</strong> escribe el texto que quieres incrustar en el PDF. Elige en qué página insertarlo con el selector de página (por defecto la última).',
+    },
+    {
+      icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+      titulo: 'Descargar el PDF firmado',
+      desc: 'Haz clic en el ícono de <strong>descarga</strong> para obtener el PDF con la firma y las notas ya incrustadas. El archivo original en el servidor también queda actualizado.',
+    },
+  ]
+
+  modal.open({
+    title: '¿Cómo usar el Gestor de Archivos?',
+    size: 'lg',
+    content: `
+      <div style="display:flex;flex-direction:column;gap:0">
+        ${pasos.map((p, i) => `
+          <div style="display:flex;gap:16px;padding:18px 0;${i < pasos.length - 1 ? 'border-bottom:1px solid var(--color-border)' : ''}">
+            <div style="flex-shrink:0;width:52px;height:52px;border-radius:var(--radius-lg);background:var(--color-brand);display:flex;align-items:center;justify-content:center;color:#fff">
+              ${p.icon}
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--color-text-primary);margin-bottom:4px;font-size:var(--font-size-sm)">
+                ${i + 1}. ${p.titulo}
+              </div>
+              <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary);line-height:1.5">
+                ${p.desc}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `,
+    footer: `<button class="btn btn-primary" id="btn-cerrar-tutorial">Entendido</button>`,
+  })
+
+  document.getElementById('btn-cerrar-tutorial').addEventListener('click', () => modal.close())
+}
+
 // ── Estilos ───────────────────────────────────────────────────
 function agregarEstilos() {
   if (document.getElementById('archivos-styles')) return
@@ -617,6 +719,9 @@ function agregarEstilos() {
       padding: 2px 8px;
       border-radius: 999px;
       font-weight: 600;
+    }
+    @media (max-width: 700px) {
+      .firma-grid { grid-template-columns: 1fr !important; }
     }
     .badge-neutral {
       background: var(--color-surface-2, #1e293b);
