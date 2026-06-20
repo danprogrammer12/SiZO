@@ -147,6 +147,8 @@ function addStyles() {
       flex-shrink: 0;
     }
     .sidebar-collapse-btn:hover { background: var(--sidebar-surface); color: var(--sidebar-text-active); }
+    .sidebar-collapse-btn svg { transition: transform 0.3s; }
+    .sidebar.collapsed .sidebar-collapse-btn svg { transform: rotate(180deg); }
 
     .sidebar-nav {
       flex: 1;

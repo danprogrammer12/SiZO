@@ -108,6 +108,7 @@ async function pintarConsolidado(root) {
         const id  = row.dataset.id
         const emp = empresas.find(e => e.id === id)
         if (!emp) return
+        history.pushState(null, '', location.href)
         set('empresa', emp)
         const sel = document.getElementById('topbar-empresa')
         if (sel) { sel.value = id }
