@@ -8,6 +8,7 @@ import { CATALOGO, DESTACADOS, ficha }   from '../catalogo.js'
 import { lineChart }      from '../components/chart.js'
 import { esc }            from '../escape.js'
 import { errorUsuario }   from '../errores.js'
+import { generarInformePDF } from '../components/pdf-informe.js'
 
 const MESES     = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const COLOR_SEM = { verde:'#22C55E', amarillo:'#F59E0B', naranja:'#FB923C', rojo:'#EF4444', neutral:'#94A3B8' }
@@ -219,7 +220,18 @@ async function pintarIndividual(root, empresa) {
         <h2 class="page-title">Dashboard Ejecutivo</h2>
         <p class="page-subtitle">${esc(empresa.nombre)} — ${MESES[month - 1]} ${year}</p>
       </div>
-      <button class="btn btn-secondary btn-sm" id="btn-vista-general">← Vista general</button>
+      <div style="display:flex;gap:var(--space-2)">
+        <button class="btn btn-secondary btn-sm" id="btn-pdf">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          Descargar PDF
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-vista-general">← Vista general</button>
+      </div>
     </div>
     <div id="dash-body">
       <div style="text-align:center;padding:var(--space-12)"><div class="spinner spinner-lg"></div></div>
@@ -231,9 +243,42 @@ async function pintarIndividual(root, empresa) {
     if (sel) sel.value = ''
   })
 
+  // Placeholder — se actualiza cuando carguen los datos
+  let _segMesActual = null
+  let _asesorNombre = '—'
+
+  document.getElementById('btn-pdf').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-pdf')
+    if (!btn) return
+    const orig = btn.innerHTML
+    btn.disabled    = true
+    btn.textContent = 'Generando...'
+    try {
+      await generarInformePDF({
+        empresa,
+        seguimiento:  _segMesActual,
+        periodo:      get('periodo'),
+        asesorNombre: _asesorNombre,
+      })
+    } catch (err) {
+      console.error('[pdf]', err)
+    } finally {
+      btn.disabled = false
+      btn.innerHTML = orig
+    }
+  })
+
   let meses = []
   try {
-    meses = await db.list('seguimiento', { eq: { empresaId: empresa.id, year }, order: 'mes' })
+    const [segs, usuarios] = await Promise.all([
+      db.list('seguimiento', { eq: { empresaId: empresa.id, year }, order: 'mes' }),
+      db.list('usuarios',    { order: 'nombre' }),
+    ])
+    meses = segs
+    if (empresa.asesorId) {
+      const asesor = usuarios.find(u => u.id === empresa.asesorId)
+      if (asesor) _asesorNombre = asesor.nombre || asesor.email
+    }
   } catch (err) {
     document.getElementById('dash-body').innerHTML =
       `<div class="alert alert-danger">${errorUsuario(err, 'cargar dashboard')}</div>`
@@ -241,6 +286,7 @@ async function pintarIndividual(root, empresa) {
   }
 
   const segMes = meses.find(m => m.mes === month)
+  _segMesActual = segMes || null
   const kpis   = segMes ? calcularIndicadores(segMes) : null
 
   document.getElementById('dash-body').innerHTML = `
