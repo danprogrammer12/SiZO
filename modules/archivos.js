@@ -134,12 +134,17 @@ function renderTabla(lista, empresas) {
   const empMap = Object.fromEntries(empresas.map(e => [e.id, e.nombre]))
 
   if (!lista.length) {
+    const puedeSubir = user?.rol !== 'CONSULTA'
     wrap.innerHTML = `
       <div class="empty-state">
         <div class="empty-state-icon">📄</div>
         <h3 class="empty-state-title">Sin archivos</h3>
         <p class="empty-state-desc">Sube tu primer PDF para comenzar.</p>
+        ${puedeSubir ? '<button class="btn btn-primary btn-empty-cta" id="btn-empty-subir">Subir PDF</button>' : ''}
       </div>`
+    if (puedeSubir) {
+      document.getElementById('btn-empty-subir').addEventListener('click', abrirSubir)
+    }
     return
   }
 

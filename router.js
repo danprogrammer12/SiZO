@@ -2,7 +2,7 @@
 // SIZO — Router SPA basado en hash
 // Carga módulos dinámicamente y renderiza en #view
 // ─────────────────────────────────────────────────────────────
-import { get } from './store.js'
+import { get, set } from './store.js'
 import { errorUsuario } from './errores.js'
 
 const routes = {
@@ -71,10 +71,23 @@ async function navigate(ruta) {
   })
 }
 
-// Escucha cambios de hash
+// Escucha cambios de hash (navegación normal entre módulos)
 window.addEventListener('hashchange', () => {
   const ruta = window.location.hash.slice(1)
   navigate(ruta)
+})
+
+// Intercepta Back/Forward: si estamos en #dashboard con empresa activa,
+// limpiar empresa (volver a vista consolidada) en lugar de saltar a otro módulo.
+// Se activa solo cuando dashboard.js hizo history.pushState al seleccionar empresa.
+window.addEventListener('popstate', () => {
+  const ruta = (window.location.hash || '#dashboard').slice(1) || 'dashboard'
+  if (ruta === 'dashboard' && get('empresa')) {
+    set('empresa', null)
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.route === 'dashboard')
+    })
+  }
 })
 
 export { navigate }
