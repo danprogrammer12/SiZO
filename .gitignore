@@ -37,3 +37,13 @@ docs/historico/auditorias/
 
 # Logs
 *.log
+
+# Artefactos generados por tests E2E (screenshots, PDFs, Excel)
+scripts/ss-*.png
+scripts/screenshot-*.png
+scripts/*.pdf
+scripts/*.xlsx
+scripts/debug-*.mjs
+
+# Supabase CLI temporales
+supabase/.temp/
