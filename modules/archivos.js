@@ -166,7 +166,7 @@ function renderTabla(lista, empresas) {
           ${lista.map(a => `
             <tr>
               <td>
-                <span class="archivo-nombre">
+                <span class="archivo-nombre" data-accion="previsualizar" data-id="${esc(a.id)}" style="cursor:pointer">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--color-brand)">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
@@ -185,6 +185,12 @@ function renderTabla(lista, empresas) {
               <td style="white-space:nowrap">${formatFecha(a.creadoEn)}</td>
               <td>
                 <div style="display:flex;gap:4px;flex-wrap:nowrap">
+                  <button class="btn btn-sm btn-outline" data-accion="previsualizar" data-id="${esc(a.id)}" title="Previsualizar PDF">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
                   <button class="btn btn-sm btn-outline" data-accion="descargar" data-id="${esc(a.id)}" title="Descargar PDF">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -224,9 +230,10 @@ function renderTabla(lista, empresas) {
       const { accion, id } = btn.dataset
       const archivo = _lista.find(a => a.id === id)
       if (!archivo) return
-      if (accion === 'descargar') descargarArchivo(archivo)
-      if (accion === 'firmar')    abrirFirmar(archivo)
-      if (accion === 'eliminar')  eliminarArchivo(archivo)
+      if (accion === 'previsualizar') abrirPrevisualizar(archivo)
+      if (accion === 'descargar')     descargarArchivo(archivo)
+      if (accion === 'firmar')        abrirFirmar(archivo)
+      if (accion === 'eliminar')      eliminarArchivo(archivo)
     })
   })
 }
@@ -315,6 +322,34 @@ async function subirArchivo(file, empresaId, descripcion) {
     tamanio: file.size,
     firmado: false,
   })
+}
+
+// ── Previsualizar (solo lectura, sin firma) ──────────────────
+async function abrirPrevisualizar(archivo) {
+  const { data: signed } = await supabase.storage.from('documentos').createSignedUrl(archivo.storagePath, 300)
+  const previewUrl = signed?.signedUrl || ''
+
+  modal.open({
+    title: `Vista previa — ${esc(archivo.nombre)}`,
+    size: 'lg',
+    content: `
+      ${previewUrl
+        ? `<object data="${previewUrl}#toolbar=0&navpanes=0" type="application/pdf"
+            style="width:100%;height:600px;border:1px solid var(--color-border);border-radius:var(--radius-md);background:#f8fafc">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:600px;gap:12px;color:var(--color-text-secondary);border:1px solid var(--color-border);border-radius:var(--radius-md)">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span style="font-size:13px">Tu navegador no puede previsualizar PDFs</span>
+              <a href="${previewUrl}" target="_blank" class="btn btn-sm btn-outline">Abrir en nueva pestaña</a>
+            </div>
+          </object>`
+        : `<div style="display:flex;align-items:center;justify-content:center;height:600px;border:1px solid var(--color-border);border-radius:var(--radius-md);color:var(--color-text-secondary);font-size:13px">
+            No se pudo cargar la vista previa
+          </div>`}
+    `,
+    footer: `<button class="btn btn-ghost" id="btn-cerrar-previsualizar">Cerrar</button>`,
+  })
+
+  document.getElementById('btn-cerrar-previsualizar').addEventListener('click', () => modal.close())
 }
 
 // ── Firmar y agregar notas ────────────────────────────────────
