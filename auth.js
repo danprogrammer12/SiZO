@@ -106,8 +106,9 @@ const EVENTOS_ACTIVIDAD = ['mousemove', 'keydown', 'click', 'scroll', 'touchstar
 // ─────────────────────────────────────────────────────────────
 function resolverSesion(session) {
   const meta = session.user.app_metadata || {}
+  const esSuperadmin = meta.superadmin === true
 
-  if (!meta.tenant_id || !meta.role) {
+  if (!esSuperadmin && (!meta.tenant_id || !meta.role)) {
     throw new Error(
       'Tu cuenta no tiene tenant asignado. ' +
       'Contacta al administrador para que ejecute la provisión inicial.'
@@ -115,12 +116,13 @@ function resolverSesion(session) {
   }
 
   return {
-    uid:      session.user.id,
-    email:    session.user.email,
-    nombre:   session.user.user_metadata?.nombre || session.user.email,
-    tenantId: meta.tenant_id,
-    rol:      meta.role,
-    empresas: meta.empresas_ids || [],
+    uid:        session.user.id,
+    email:      session.user.email,
+    nombre:     session.user.user_metadata?.nombre || session.user.email,
+    tenantId:   meta.tenant_id || null,
+    rol:        meta.role || null,
+    empresas:   meta.empresas_ids || [],
+    superadmin: esSuperadmin,
   }
 }
 
@@ -144,12 +146,13 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     const sesion = resolverSesion(session)
 
     set('user', {
-      uid:      sesion.uid,
-      email:    sesion.email,
-      nombre:   sesion.nombre,
-      tenantId: sesion.tenantId,
-      rol:      sesion.rol,
-      empresas: sesion.empresas,
+      uid:        sesion.uid,
+      email:      sesion.email,
+      nombre:     sesion.nombre,
+      tenantId:   sesion.tenantId,
+      rol:        sesion.rol,
+      empresas:   sesion.empresas,
+      superadmin: sesion.superadmin,
     })
 
     set('tenant', { id: sesion.tenantId })

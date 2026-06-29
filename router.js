@@ -22,6 +22,7 @@ const routes = {
   'indicadores':  () => import('./modules/indicadores.js'),
   'perfil':       () => import('./modules/perfil.js'),
   'archivos':     () => import('./modules/archivos.js'),
+  'superadmin':   () => import('./modules/superadmin.js'),
 }
 
 // Control de acceso por rol — CAPA UX ÚNICAMENTE
@@ -32,12 +33,18 @@ const rolesPermitidos = {
   'casos': ['ADMIN'],
 }
 
+// Rutas exclusivas de SUPERADMIN (flag en app_metadata, no rol de tenant)
+const rutasSuperadmin = new Set(['superadmin'])
+
 let moduloActual = null
 
 async function navigate(ruta) {
   if (!ruta || !routes[ruta]) ruta = 'dashboard'
 
   const user = get('user')
+  if (rutasSuperadmin.has(ruta) && (!user || !user.superadmin)) {
+    ruta = 'dashboard'
+  }
   const restriccion = rolesPermitidos[ruta]
   if (restriccion && user && !restriccion.includes(user.rol)) {
     ruta = 'dashboard'
