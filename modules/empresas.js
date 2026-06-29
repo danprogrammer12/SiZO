@@ -1,4 +1,5 @@
 import db              from '../db.js'
+import { supabase }    from '../supabase.js'
 import { get }         from '../store.js'
 import modal           from '../components/modal.js'
 import toast           from '../components/toast.js'
@@ -353,6 +354,38 @@ async function guardar(empresaActual) {
     errEl.textContent = 'El número de trabajadores debe ser mayor a 0'
     errEl.classList.remove('hidden')
     return
+  }
+
+  // Verificar billing solo al crear empresa nueva
+  if (!empresaActual) {
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('estado, empresas_limite, trial_ends')
+      .eq('id', user.tenantId)
+      .single()
+
+    if (tenant) {
+      if (tenant.estado === 'suspendido') {
+        errEl.textContent = 'Tu cuenta está suspendida. Contacta al soporte para reactivarla.'
+        errEl.classList.remove('hidden')
+        return
+      }
+      if (tenant.estado === 'trial' && tenant.trial_ends && new Date(tenant.trial_ends) < new Date()) {
+        errEl.textContent = 'Tu período de prueba ha vencido. Contacta al soporte para activar tu plan.'
+        errEl.classList.remove('hidden')
+        return
+      }
+      const { count } = await supabase
+        .from('empresas')
+        .select('*', { count: 'exact', head: true })
+        .eq('activa', true)
+        .is('deleted_at', null)
+      if (count !== null && count >= tenant.empresas_limite) {
+        errEl.textContent = `Alcanzaste el límite de tu plan (${tenant.empresas_limite} empresa${tenant.empresas_limite !== 1 ? 's' : ''}). Escríbenos para ampliar tu plan.`
+        errEl.classList.remove('hidden')
+        return
+      }
+    }
   }
 
   errEl.classList.add('hidden')

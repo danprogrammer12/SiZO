@@ -27,6 +27,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Notas y borradores locales
+estado-sizo.txt
+
 # Archivos de documentación interna (no van al repo)
 docs/historico/SGSST_ERP_Final.html
 docs/historico/dashboard.html
