@@ -77,9 +77,50 @@
             <span id="login-btn-spinner" class="spinner hidden"></span>
           </button>
 
-          <div style="text-align:center;margin-top:var(--space-3)">
+          <div style="text-align:center;margin-top:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
             <button type="button" id="forgot-link" style="background:none;border:none;color:#94A3B8;font-size:var(--font-size-sm);cursor:pointer;text-decoration:underline">
               ¿Olvidaste tu contraseña?
+            </button>
+            <button type="button" id="register-link" style="background:none;border:none;color:#94A3B8;font-size:var(--font-size-sm);cursor:pointer;text-decoration:underline">
+              ¿No tienes cuenta? Crea tu empresa
+            </button>
+          </div>
+
+          <button type="button" id="demo-btn" class="btn btn-secondary btn-lg" style="width:100%;margin-top:var(--space-3)">
+            <span id="demo-btn-text">Ver demo</span>
+            <span id="demo-btn-spinner" class="spinner hidden"></span>
+          </button>
+        </form>
+
+        <!-- Formulario de autoregistro (nuevo tenant) -->
+        <form id="register-form" class="login-form hidden" novalidate>
+          <p style="color:#94A3B8;font-size:var(--font-size-sm);margin-bottom:var(--space-3)">
+            Crea tu cuenta y empieza a gestionar tu SG-SST en minutos.
+          </p>
+          <div class="form-group">
+            <label for="register-empresa">Nombre de la empresa o consultora</label>
+            <input type="text" id="register-empresa" placeholder="Mi Empresa S.A.S" autocomplete="organization" required />
+          </div>
+          <div class="form-group">
+            <label for="register-nombre">Tu nombre</label>
+            <input type="text" id="register-nombre" placeholder="Nombre y apellido" autocomplete="name" required />
+          </div>
+          <div class="form-group">
+            <label for="register-email">Correo electrónico</label>
+            <input type="email" id="register-email" placeholder="correo@empresa.com" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label for="register-password">Contraseña</label>
+            <input type="password" id="register-password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required minlength="8" />
+          </div>
+          <div id="register-error" class="form-error hidden"></div>
+          <button type="submit" class="btn btn-primary btn-lg" id="register-btn" style="width:100%">
+            <span id="register-btn-text">Crear cuenta</span>
+            <span id="register-btn-spinner" class="spinner hidden"></span>
+          </button>
+          <div style="text-align:center;margin-top:var(--space-3)">
+            <button type="button" id="back-to-login-from-register" style="background:none;border:none;color:#94A3B8;font-size:var(--font-size-sm);cursor:pointer;text-decoration:underline">
+              Volver al inicio de sesión
             </button>
           </div>
         </form>

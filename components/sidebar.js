@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { route: 'plan',        label: 'Plan de Trabajo',   icon: icon_plan },
   { divider: true, label: 'Gestión' },
   { route: 'empresas',    label: 'Empresas',          icon: icon_empresas },
-  { route: 'usuarios',    label: 'Usuarios',           icon: icon_usuarios },
+  { route: 'usuarios',    label: 'Usuarios',           icon: icon_usuarios, roles: ['ADMIN'] },
   { route: 'maestro',     label: 'Maestro',            icon: icon_maestro },
   { route: 'archivos',    label: 'Archivos',           icon: icon_archivos },
   { divider: true, label: 'Revisión' },
@@ -109,6 +109,10 @@ function bindEvents() {
 function syncUser() {
   subscribe('user', user => {
     if (!user) return
+
+    const navEl = document.getElementById('sidebar-nav')
+    if (navEl) navEl.innerHTML = renderNav()
+
     const avatarEl = document.getElementById('sidebar-avatar')
     const infoEl   = document.getElementById('sidebar-user-info')
     if (!avatarEl || !infoEl) return
