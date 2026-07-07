@@ -217,6 +217,17 @@ function mostrarLogin() {
   if (btn)     btn.disabled        = false
   if (btnText) btnText.textContent = 'Iniciar sesión'
   if (spinner) spinner.classList.add('hidden')
+
+  const demoBtn     = document.getElementById('demo-btn')
+  const demoBtnText = document.getElementById('demo-btn-text')
+  const demoSpinner = document.getElementById('demo-btn-spinner')
+  if (demoBtn)     demoBtn.disabled        = false
+  if (demoBtnText) demoBtnText.textContent = 'Ver demo'
+  if (demoSpinner) demoSpinner.classList.add('hidden')
+
+  document.getElementById('login-form').classList.remove('hidden')
+  document.getElementById('forgot-form').classList.add('hidden')
+  document.getElementById('register-form').classList.add('hidden')
 }
 
 function mostrarErrorSesion(mensaje) {
@@ -267,6 +278,36 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   }
 })
 
+// ─────────────────────────────────────────────────────────────
+// Botón "Ver demo" — login automático con usuario CONSULTA
+// restringido a las empresas [DEMO] del tenant de pruebas.
+// ─────────────────────────────────────────────────────────────
+const DEMO_EMAIL    = 'demo@sizosaas.co'
+const DEMO_PASSWORD = 'DemoSIZO2026!'
+
+document.getElementById('demo-btn').addEventListener('click', async () => {
+  const btn     = document.getElementById('demo-btn')
+  const btnText = document.getElementById('demo-btn-text')
+  const spinner = document.getElementById('demo-btn-spinner')
+  const errEl   = document.getElementById('login-error')
+
+  errEl.classList.add('hidden')
+  btn.disabled        = true
+  btnText.textContent = 'Entrando a la demo...'
+  spinner.classList.remove('hidden')
+
+  try {
+    await login(DEMO_EMAIL, DEMO_PASSWORD)
+    // onAuthStateChange toma el control desde aquí
+  } catch (err) {
+    errEl.textContent   = 'No se pudo cargar la demo. Intenta de nuevo en unos minutos.'
+    errEl.classList.remove('hidden')
+    btn.disabled        = false
+    btnText.textContent = 'Ver demo'
+    spinner.classList.add('hidden')
+  }
+})
+
 function mensajeError(err) {
   const msg = err.message || ''
   if (msg.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos.'
@@ -281,6 +322,7 @@ function mensajeError(err) {
 // ─────────────────────────────────────────────────────────────
 document.getElementById('forgot-link').addEventListener('click', () => {
   document.getElementById('login-form').classList.add('hidden')
+  document.getElementById('register-form').classList.add('hidden')
   document.getElementById('forgot-form').classList.remove('hidden')
   document.getElementById('forgot-error').classList.add('hidden')
   document.getElementById('forgot-ok').classList.add('hidden')
@@ -290,6 +332,76 @@ document.getElementById('back-to-login').addEventListener('click', () => {
   document.getElementById('forgot-form').classList.add('hidden')
   document.getElementById('login-form').classList.remove('hidden')
 })
+
+// ─────────────────────────────────────────────────────────────
+// Flujo de autoregistro — crea tenant + usuario ADMIN
+// ─────────────────────────────────────────────────────────────
+document.getElementById('register-link').addEventListener('click', () => {
+  document.getElementById('login-form').classList.add('hidden')
+  document.getElementById('register-form').classList.remove('hidden')
+  document.getElementById('register-error').classList.add('hidden')
+})
+
+document.getElementById('back-to-login-from-register').addEventListener('click', () => {
+  document.getElementById('register-form').classList.add('hidden')
+  document.getElementById('login-form').classList.remove('hidden')
+})
+
+document.getElementById('register-form').addEventListener('submit', async e => {
+  e.preventDefault()
+
+  const empresaNombre  = document.getElementById('register-empresa').value.trim()
+  const contactoNombre = document.getElementById('register-nombre').value.trim()
+  const email           = document.getElementById('register-email').value.trim()
+  const password         = document.getElementById('register-password').value
+  const btn     = document.getElementById('register-btn')
+  const btnText = document.getElementById('register-btn-text')
+  const spinner = document.getElementById('register-btn-spinner')
+  const errEl   = document.getElementById('register-error')
+
+  errEl.classList.add('hidden')
+
+  if (password.length < 8) {
+    errEl.textContent = 'La contraseña debe tener al menos 8 caracteres.'
+    errEl.classList.remove('hidden')
+    return
+  }
+
+  btn.disabled        = true
+  btnText.textContent = 'Creando cuenta...'
+  spinner.classList.remove('hidden')
+
+  try {
+    const { data, error } = await supabase.functions.invoke('registrar-tenant', {
+      body: { empresaNombre, contactoNombre, email, password },
+    })
+
+    if (error) {
+      // FunctionsHttpError trae el body real en error.context (Response)
+      const detalle = await error.context?.json?.().catch(() => null)
+      throw new Error(detalle?.error || error.message)
+    }
+    if (data?.error) throw new Error(data.error)
+
+    await login(email, password)
+    // onAuthStateChange toma el control desde aquí
+  } catch (err) {
+    errEl.textContent   = mensajeErrorRegistro(err)
+    errEl.classList.remove('hidden')
+    btn.disabled        = false
+    btnText.textContent = 'Crear cuenta'
+    spinner.classList.add('hidden')
+  }
+})
+
+function mensajeErrorRegistro(err) {
+  const msg = err.message || ''
+  if (msg.includes('Ya existe una cuenta'))    return 'Ya existe una cuenta con ese correo.'
+  if (msg.includes('inválido'))                return msg
+  if (msg.includes('al menos 8 caracteres'))   return msg
+  if (msg.includes('Faltan campos'))           return 'Completa todos los campos.'
+  return 'No se pudo crear la cuenta. Intenta de nuevo en unos minutos.'
+}
 
 document.getElementById('forgot-form').addEventListener('submit', async e => {
   e.preventDefault()

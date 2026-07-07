@@ -7,6 +7,7 @@
   "scripts": {
     "serve": "npx serve . -p 5000",
     "provision:admin": "node scripts/provision-admin.mjs",
+    "provision:demo": "node scripts/provision-demo-user.mjs",
     "test": "node testing/QA/poc-jsonb-roundtrip.mjs && node scripts/test-regresion.mjs && node scripts/test-seguridad-rls.mjs",
     "test:unit": "node testing/QA/poc-jsonb-roundtrip.mjs",
     "test:mecanica": "node scripts/test-regresion.mjs",
