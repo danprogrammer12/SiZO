@@ -71,6 +71,8 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 | Perfil | `modules/perfil.js` | |
 | Archivos | `modules/archivos.js` | PDFs: subir, previsualizar (modal 2 columnas con `<object>`), firmar (pdf-lib: firma dibujada o imagen + notas incrustadas), descargar, soft-delete. Tutorial 6 pasos. |
 
+**Descarga de plantillas SGSST:** `components/exportar-plantilla.js` centraliza la exportación a Excel (SheetJS) y PDF (jsPDF+autoTable) de cualquier módulo tabular. `botonesDescarga({ tabla, titulo, columnas, nombreBase, urlOficial })` genera los botones "Excel"/"PDF" (releen la tabla en cada click, no dependen del estado interno del CRUD) y, si se pasa `urlOficial`, un botón "Formato oficial" que enlaza a la fuente pública (ARL/universidad) del formato en blanco — no se redistribuye la GTC 45 de ICONTEC (es de pago) sino recreaciones libres equivalentes. Cableado en: matriz-riesgos, matriz-epp, entrega-epp, documentos-sst, actas, casos, auditoria. **Cuidado:** el título pasado a `exportarExcel` se usa como nombre de hoja — Excel prohíbe `: \ / ? * [ ]`, ya saneado en la función pero no uses esos caracteres en `titulo` de otros módulos sin pasar por `botonesDescarga`.
+
 ---
 
 ## APIs internas importantes

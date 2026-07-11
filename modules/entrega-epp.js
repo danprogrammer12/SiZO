@@ -1,5 +1,18 @@
 // SIZO — Entrega individual de EPP (evidencia firmada, Dec. 1072/2015 Art. 2.2.4.6.24)
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { botonesDescarga } from '../components/exportar-plantilla.js'
+
+const COLUMNAS_EXPORT = [
+  { key: 'fechaEntrega', label: 'Fecha de entrega', wch: 14 },
+  { key: 'trabajador', label: 'Trabajador', wch: 22 },
+  { key: 'cargo', label: 'Cargo', wch: 18 },
+  { key: 'eppEntregado', label: 'EPP entregado', wch: 26 },
+  { key: 'cantidad', label: 'Cantidad', wch: 10 },
+  { key: 'talla', label: 'Talla', wch: 10 },
+  { key: 'fechaProximaReposicion', label: 'Próxima reposición', wch: 16 },
+  { key: 'firmado', label: 'Firmado', wch: 10 },
+  { key: 'observaciones', label: 'Observaciones', wch: 26 },
+]
 
 const { render } = crearModulo({
   tabla: 'entrega_epp',
@@ -8,6 +21,13 @@ const { render } = crearModulo({
   icono: '📦',
   labelNuevo: 'Nueva entrega',
   ordenPor: 'fechaEntrega',
+  botones: botonesDescarga({
+    tabla: 'entrega_epp',
+    titulo: 'Formato de Entrega Individual de EPP',
+    columnas: COLUMNAS_EXPORT,
+    nombreBase: 'SIZO_Entrega_EPP',
+    urlOficial: 'https://www.ramajudicial.gov.co/documents/8957139/8958832/F-SST-11+Formato+entrega+EPP+2022+V2.xls/c67ab34d-8b23-4add-a32a-61d04f945883',
+  }),
   columnas: [
     { key: 'fechaEntrega', label: 'Fecha', format: fmtFecha },
     { key: 'trabajador', label: 'Trabajador' },

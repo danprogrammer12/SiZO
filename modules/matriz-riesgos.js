@@ -1,6 +1,7 @@
 // SIZO — Matriz de Identificación de Peligros y Valoración de Riesgos (IPVR / GTC 45)
 import { crearModulo, badge } from './_crud.js'
 import { calcularRiesgoGtc45 } from './calcular-riesgo-gtc45.js'
+import { botonesDescarga } from '../components/exportar-plantilla.js'
 
 const CATEGORIAS = [
   { value: 'fisico', label: 'Físico' },
@@ -40,6 +41,29 @@ const ACEPTABILIDAD_BADGE = {
   'Aceptable': 'badge-success',
 }
 
+const COLUMNAS_EXPORT = [
+  { key: 'proceso', label: 'Proceso', wch: 18 },
+  { key: 'zonaLugar', label: 'Zona / lugar', wch: 16 },
+  { key: 'actividad', label: 'Actividad', wch: 18 },
+  { key: 'tarea', label: 'Tarea', wch: 16 },
+  { key: 'peligroCategoria', label: 'Categoría', wch: 14 },
+  { key: 'peligroDescripcion', label: 'Peligro', wch: 26 },
+  { key: 'fuente', label: 'Fuente', wch: 16 },
+  { key: 'controlesFuente', label: 'Control fuente', wch: 16 },
+  { key: 'controlesMedio', label: 'Control medio', wch: 16 },
+  { key: 'controlesIndividuo', label: 'Control individuo', wch: 16 },
+  { key: 'numExpuestos', label: 'N.° expuestos', wch: 10 },
+  { key: 'nivelDeficiencia', label: 'ND', wch: 6 },
+  { key: 'nivelExposicion', label: 'NE', wch: 6 },
+  { key: 'nivelProbabilidad', label: 'NP', wch: 6 },
+  { key: 'interpretacionProbabilidad', label: 'Interp. NP', wch: 12 },
+  { key: 'nivelConsecuencia', label: 'NC', wch: 6 },
+  { key: 'nivelRiesgo', label: 'NR', wch: 8 },
+  { key: 'interpretacionRiesgo', label: 'Zona', wch: 8 },
+  { key: 'aceptabilidad', label: 'Aceptabilidad', wch: 22 },
+  { key: 'controlesPropuestos', label: 'Controles propuestos', wch: 26 },
+]
+
 const { render } = crearModulo({
   tabla: 'matriz_riesgos',
   titulo: 'Matriz de Riesgos',
@@ -47,6 +71,14 @@ const { render } = crearModulo({
   icono: '🛡️',
   labelNuevo: 'Nuevo peligro',
   ordenPor: 'creadoEn',
+  botones: botonesDescarga({
+    tabla: 'matriz_riesgos',
+    titulo: 'Matriz de Identificación de Peligros y Valoración de Riesgos (GTC 45)',
+    subtitulo: 'IPVR',
+    columnas: COLUMNAS_EXPORT,
+    nombreBase: 'SIZO_Matriz_Riesgos',
+    urlOficial: 'https://planeacion.uniandes.edu.co/images/Formatos/SG-SST/FOR-45-1-05-01_Formato_matriz_de_peligros_y_riesgos.xlsx',
+  }),
   columnas: [
     { key: 'proceso', label: 'Proceso' },
     { key: 'peligroCategoria', label: 'Categoría',

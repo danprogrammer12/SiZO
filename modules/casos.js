@@ -2,9 +2,23 @@
 // El gating de ruta vive en router.js (rolesPermitidos.casos = ['ADMIN']);
 // la RLS real está en casos_medicos ("solo ADMIN", policy for all).
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { botonesDescarga } from '../components/exportar-plantilla.js'
 
 const TIPO_BADGE   = { AT: 'badge-danger', EL: 'badge-warning', EG: 'badge-neutral' }
 const ESTADO_BADGE = { abierto: 'badge-brand', en_seguimiento: 'badge-warning', cerrado: 'badge-success' }
+
+const COLUMNAS_EXPORT = [
+  { key: 'trabajador', label: 'Trabajador', wch: 20 },
+  { key: 'cargo', label: 'Cargo', wch: 18 },
+  { key: 'tipo', label: 'Tipo', wch: 8 },
+  { key: 'diagnostico', label: 'Diagnóstico', wch: 26 },
+  { key: 'cie10', label: 'CIE-10', wch: 10 },
+  { key: 'fechaApertura', label: 'Apertura', wch: 14 },
+  { key: 'fechaCierre', label: 'Cierre', wch: 14 },
+  { key: 'estado', label: 'Estado', wch: 16 },
+  { key: 'reubicacion', label: 'Reubicación', wch: 12 },
+  { key: 'restricciones', label: 'Restricciones', wch: 26 },
+]
 
 const { render } = crearModulo({
   tabla: 'casos_medicos',
@@ -13,6 +27,12 @@ const { render } = crearModulo({
   icono: '🩺',
   labelNuevo: 'Nuevo caso',
   ordenPor: 'fechaApertura',
+  botones: botonesDescarga({
+    tabla: 'casos_medicos',
+    titulo: 'Casos Médicos (AT / EL / EG)',
+    columnas: COLUMNAS_EXPORT,
+    nombreBase: 'SIZO_Casos_Medicos',
+  }),
   columnas: [
     { key: 'trabajador', label: 'Trabajador' },
     { key: 'tipo', label: 'Tipo', format: v => badge(v, TIPO_BADGE) },
