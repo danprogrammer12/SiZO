@@ -10,6 +10,7 @@ const routes = {
   'seguimiento':  () => import('./modules/seguimiento.js'),
   'empresas':     () => import('./modules/empresas.js'),
   'usuarios':     () => import('./modules/usuarios.js'),
+  'matriz-riesgos': () => import('./modules/matriz-riesgos.js'),
   'accidentes':   () => import('./modules/accidentes.js'),
   'ausentismo':   () => import('./modules/ausentismo.js'),
   'acciones':     () => import('./modules/acciones.js'),

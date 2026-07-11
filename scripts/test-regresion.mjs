@@ -8,6 +8,7 @@
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { calcularIndicadores } from '../modules/calcular-indicadores.js'
+import { calcularRiesgoGtc45 } from '../modules/calcular-riesgo-gtc45.js'
 import { fromRow } from '../case-convert.js'
 
 const env = readFileSync(new URL('../.env', import.meta.url), 'utf8')
@@ -110,6 +111,43 @@ async function test3() {
   await admin.from('acciones').delete().eq('id', creada.id) // limpieza real
 }
 
+// ── TEST 4 — Motor GTC 45 + CRUD matriz de riesgos ──
+async function test4() {
+  console.log('\nTEST 4 — Motor GTC 45 y CRUD matriz de riesgos')
+
+  // Riesgo alto conocido: ND=10 (Muy Alto) × NE=4 (Continua) = NP 40 (Muy Alto)
+  // NP 40 × NC 100 (Mortal) = NR 4000 → Zona I, No aceptable
+  const r1 = calcularRiesgoGtc45({ nivelDeficiencia: 10, nivelExposicion: 4, nivelConsecuencia: 100 })
+  check('GTC45: NP=40 clasifica Muy Alto', r1.interpretacionProbabilidad === 'Muy Alto', `NP=${r1.nivelProbabilidad}`)
+  check('GTC45: NR=4000 clasifica zona I / No aceptable',
+    r1.nivelRiesgo === 4000 && r1.interpretacionRiesgo === 'I' && r1.aceptabilidad === 'No aceptable',
+    `NR=${r1.nivelRiesgo} interp=${r1.interpretacionRiesgo} acept=${r1.aceptabilidad}`)
+
+  // Riesgo bajo conocido: ND=2 (Medio) × NE=1 (Esporádica) = NP 2 (Bajo)
+  // NP 2 × NC 10 (Leve) = NR 20 → Zona IV, Aceptable
+  const r2 = calcularRiesgoGtc45({ nivelDeficiencia: 2, nivelExposicion: 1, nivelConsecuencia: 10 })
+  check('GTC45: NR=20 clasifica zona IV / Aceptable',
+    r2.nivelRiesgo === 20 && r2.interpretacionRiesgo === 'IV' && r2.aceptabilidad === 'Aceptable',
+    `NR=${r2.nivelRiesgo} interp=${r2.interpretacionRiesgo} acept=${r2.aceptabilidad}`)
+
+  const { empId, aud } = await ctx()
+  const { data: creada, error: e1 } = await admin.from('matriz_riesgos').insert({
+    ...aud, empresa_id: empId, proceso: 'REGRESION', actividad: 'Soldadura',
+    peligro_categoria: 'fisico', peligro_descripcion: 'Radiación no ionizante',
+    nivel_deficiencia: 10, nivel_exposicion: 4, nivel_consecuencia: 100,
+    nivel_probabilidad: r1.nivelProbabilidad, interpretacion_probabilidad: r1.interpretacionProbabilidad,
+    nivel_riesgo: r1.nivelRiesgo, interpretacion_riesgo: r1.interpretacionRiesgo, aceptabilidad: r1.aceptabilidad,
+  }).select('*').single()
+  check('Crear peligro en matriz de riesgos', !e1 && creada?.id, e1?.message || `id ${creada?.id}`)
+  check('Nivel de riesgo calculado se persiste', creada?.nivel_riesgo === 4000, `nivel_riesgo = ${creada?.nivel_riesgo}`)
+
+  await admin.from('matriz_riesgos').update({ activo: false, deleted_at: new Date().toISOString() }).eq('id', creada.id)
+  const { data: activos } = await admin.from('matriz_riesgos').select('id').eq('id', creada.id).eq('activo', true)
+  check('Soft delete excluye de listados (activo=true)', activos.length === 0, `${activos.length} fila(s) activas (esperado 0)`)
+
+  await admin.from('matriz_riesgos').delete().eq('id', creada.id) // limpieza real
+}
+
 async function main() {
   console.log('═══════════════════════════════════════════')
   console.log('  SIZO — PRUEBAS DE REGRESIÓN')
@@ -117,6 +155,7 @@ async function main() {
   await test1()
   await test2()
   await test3()
+  await test4()
   console.log('\n═══════════════════════════════════════════')
   console.log(`  RESULTADO: ${pasaron} PASS · ${fallaron} FAIL`)
   console.log('═══════════════════════════════════════════')
