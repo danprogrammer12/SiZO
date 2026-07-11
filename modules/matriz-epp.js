@@ -1,5 +1,6 @@
 // SIZO — Matriz de Elementos de Protección Personal (EPP)
 import { crearModulo, badge } from './_crud.js'
+import { botonesDescarga } from '../components/exportar-plantilla.js'
 
 const ZONAS = [
   { value: 'cabeza', label: 'Cabeza' },
@@ -12,6 +13,15 @@ const ZONAS = [
   { value: 'altura', label: 'Trabajo en altura' },
 ]
 
+const COLUMNAS_EXPORT = [
+  { key: 'cargo', label: 'Cargo', wch: 20 },
+  { key: 'peligroAsociado', label: 'Peligro asociado', wch: 24 },
+  { key: 'eppRequerido', label: 'EPP requerido', wch: 26 },
+  { key: 'zonaCuerpo', label: 'Zona del cuerpo', wch: 18 },
+  { key: 'normaTecnica', label: 'Norma técnica', wch: 18 },
+  { key: 'frecuenciaReposicion', label: 'Frecuencia de reposición', wch: 22 },
+]
+
 const { render } = crearModulo({
   tabla: 'matriz_epp',
   titulo: 'Matriz de EPP',
@@ -19,6 +29,13 @@ const { render } = crearModulo({
   icono: '🦺',
   labelNuevo: 'Nuevo EPP requerido',
   ordenPor: 'creadoEn',
+  botones: botonesDescarga({
+    tabla: 'matriz_epp',
+    titulo: 'Matriz de Elementos de Protección Personal (EPP)',
+    columnas: COLUMNAS_EXPORT,
+    nombreBase: 'SIZO_Matriz_EPP',
+    urlOficial: 'https://www.verifty.com/recursos/matriz-epp',
+  }),
   columnas: [
     { key: 'cargo', label: 'Cargo' },
     { key: 'eppRequerido', label: 'EPP requerido' },

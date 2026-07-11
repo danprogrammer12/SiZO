@@ -1,7 +1,20 @@
 // SIZO — Auditoría interna y revisión por la dirección (Dec. 1072/2015 Art. 2.2.4.6.29-31)
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { botonesDescarga } from '../components/exportar-plantilla.js'
 
 const ESTADO_BADGE = { pendiente: 'badge-neutral', en_proceso: 'badge-warning', completada: 'badge-success' }
+
+const COLUMNAS_EXPORT = [
+  { key: 'year', label: 'Año', wch: 8 },
+  { key: 'tipo', label: 'Tipo', wch: 10 },
+  { key: 'fecha', label: 'Fecha', wch: 14 },
+  { key: 'auditor', label: 'Auditor', wch: 20 },
+  { key: 'alcance', label: 'Alcance', wch: 26 },
+  { key: 'puntajeGlobal', label: 'Puntaje', wch: 10 },
+  { key: 'hallazgos', label: 'Hallazgos', wch: 30 },
+  { key: 'compromisos', label: 'Compromisos', wch: 30 },
+  { key: 'estado', label: 'Estado', wch: 14 },
+]
 
 const { render } = crearModulo({
   tabla: 'auditorias',
@@ -10,6 +23,12 @@ const { render } = crearModulo({
   icono: '📄',
   labelNuevo: 'Nueva auditoría',
   ordenPor: 'fecha',
+  botones: botonesDescarga({
+    tabla: 'auditorias',
+    titulo: 'Programa de Auditoría del SG-SST',
+    columnas: COLUMNAS_EXPORT,
+    nombreBase: 'SIZO_Auditorias',
+  }),
   columnas: [
     { key: 'fecha', label: 'Fecha', format: fmtFecha },
     { key: 'tipo', label: 'Tipo', format: v => badge(v === 'interna' ? 'Interna' : 'Externa',

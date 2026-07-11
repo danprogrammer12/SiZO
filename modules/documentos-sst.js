@@ -1,5 +1,6 @@
 // SIZO — Documentación general del SG-SST (política, objetivos, requisitos legales, manual)
 import { crearModulo, fmtFecha, badge } from './_crud.js'
+import { botonesDescarga } from '../components/exportar-plantilla.js'
 
 const TIPOS = [
   { value: 'politica', label: 'Política de SST' },
@@ -14,6 +15,16 @@ function vigencia(fechaVigencia) {
   return venc ? badge('Vencido', { Vencido: 'badge-danger' }) : badge('Vigente', { Vigente: 'badge-success' })
 }
 
+const COLUMNAS_EXPORT = [
+  { key: 'tipo', label: 'Tipo', wch: 20 },
+  { key: 'nombre', label: 'Nombre', wch: 30 },
+  { key: 'version', label: 'Versión', wch: 10 },
+  { key: 'responsable', label: 'Responsable', wch: 20 },
+  { key: 'fechaAprobacion', label: 'Fecha aprobación', wch: 16 },
+  { key: 'fechaVigencia', label: 'Vigente hasta', wch: 16 },
+  { key: 'contenido', label: 'Contenido / resumen', wch: 36 },
+]
+
 const { render } = crearModulo({
   tabla: 'documentos_sst',
   titulo: 'Documentación del SG-SST',
@@ -21,6 +32,12 @@ const { render } = crearModulo({
   icono: '📜',
   labelNuevo: 'Nuevo documento',
   ordenPor: 'creadoEn',
+  botones: botonesDescarga({
+    tabla: 'documentos_sst',
+    titulo: 'Documentación general del SG-SST',
+    columnas: COLUMNAS_EXPORT,
+    nombreBase: 'SIZO_Documentacion_SST',
+  }),
   columnas: [
     { key: 'tipo', label: 'Tipo', format: v => badge(TIPOS.find(t => t.value === v)?.label || v, { }) },
     { key: 'nombre', label: 'Nombre' },
