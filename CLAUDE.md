@@ -54,6 +54,10 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 | Empresas | `modules/empresas.js` | CRUD + asignación asesores. Carga `usuarios` en paralelo para resolver nombres. |
 | Usuarios | `modules/usuarios.js` | CRUD + creación vía Edge Function. Tests E2E: 14 PASS. |
 | Matriz de Riesgos | `modules/matriz-riesgos.js` | IPVR/GTC 45. Motor de cálculo puro en `modules/calcular-riesgo-gtc45.js` (ND×NE=probabilidad, probabilidad×NC=nivel de riesgo → zona I-IV + aceptabilidad). Los niveles se calculan en `antesDeGuardar` y se persisten ya resueltos, no en vivo dentro del modal. |
+| Matriz de EPP | `modules/matriz-epp.js` | Cruza cargo con EPP requerido; `peligro_id` referencia opcionalmente `matriz_riesgos.id`. |
+| Entrega de EPP | `modules/entrega-epp.js` | Evidencia de entrega individual firmada (Dec. 1072 Art. 2.2.4.6.24). |
+| Documentación SST | `modules/documentos-sst.js` | Política, objetivos, matriz de requisitos legales, manual del SG-SST. Badge de vigencia calculado en el listado (no persistido). |
+| Actas de Comités | `modules/actas.js` | COPASST y Comité de Convivencia Laboral en una sola tabla (`actas.tipo`). |
 | Accidentes | `modules/accidentes.js` | |
 | Ausentismo | `modules/ausentismo.js` | |
 | Acciones | `modules/acciones.js` | |
@@ -122,6 +126,7 @@ Resultado actual: **24 PASS · 0 FAIL** (unit + mecánica) · **7 PASS · 0 FAIL
 | `004_archivos.sql` | Tabla `archivos` + bucket `documentos` | ✅ |
 | `005_billing.sql` | Billing multitenant: estado/límite en `tenants`, `is_superadmin()` | ✅ |
 | `006_matriz_riesgos.sql` | Tabla `matriz_riesgos` (IPVR/GTC 45) | ✅ aplicada 2026-07-11 |
+| `007_epp_documentos_actas.sql` | Tablas `matriz_epp`, `entrega_epp`, `documentos_sst`, `actas` | ✅ aplicada 2026-07-11 |
 
 ---
 

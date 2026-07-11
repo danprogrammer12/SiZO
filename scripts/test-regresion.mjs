@@ -148,6 +148,30 @@ async function test4() {
   await admin.from('matriz_riesgos').delete().eq('id', creada.id) // limpieza real
 }
 
+// ── TEST 5 — CRUD + soft delete de plantillas SGSST (EPP, documentos, actas) ──
+async function test5() {
+  console.log('\nTEST 5 — CRUD y soft delete: matriz_epp, entrega_epp, documentos_sst, actas')
+  const { empId, aud } = await ctx()
+
+  const casos = [
+    { tabla: 'matriz_epp', datos: { cargo: 'Soldador', epp_requerido: 'Careta de soldar', zona_cuerpo: 'ojos_cara' } },
+    { tabla: 'entrega_epp', datos: { trabajador: 'REGRESION', epp_entregado: 'Casco', cantidad: 1, fecha_entrega: '2099-01-01' } },
+    { tabla: 'documentos_sst', datos: { tipo: 'politica', nombre: 'Política SST REGRESION' } },
+    { tabla: 'actas', datos: { tipo: 'copasst', fecha: '2099-01-01', asistentes: [] } },
+  ]
+
+  for (const { tabla, datos } of casos) {
+    const { data: creado, error: e1 } = await admin.from(tabla).insert({ ...aud, empresa_id: empId, ...datos }).select('*').single()
+    check(`Crear registro en ${tabla}`, !e1 && creado?.id, e1?.message || `id ${creado?.id}`)
+
+    await admin.from(tabla).update({ activo: false, deleted_at: new Date().toISOString() }).eq('id', creado.id)
+    const { data: activos } = await admin.from(tabla).select('id').eq('id', creado.id).eq('activo', true)
+    check(`Soft delete excluye de listados en ${tabla}`, activos.length === 0, `${activos.length} fila(s) activas (esperado 0)`)
+
+    await admin.from(tabla).delete().eq('id', creado.id) // limpieza real
+  }
+}
+
 async function main() {
   console.log('═══════════════════════════════════════════')
   console.log('  SIZO — PRUEBAS DE REGRESIÓN')
@@ -156,6 +180,7 @@ async function main() {
   await test2()
   await test3()
   await test4()
+  await test5()
   console.log('\n═══════════════════════════════════════════')
   console.log(`  RESULTADO: ${pasaron} PASS · ${fallaron} FAIL`)
   console.log('═══════════════════════════════════════════')
