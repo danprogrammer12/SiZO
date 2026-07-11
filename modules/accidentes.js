@@ -42,8 +42,10 @@ const { render } = crearModulo({
     { key: 'esMortal', label: ' ', type: 'checkbox', checkLabel: 'Accidente mortal' },
     { key: 'investigado', label: 'Investigación', type: 'checkbox', checkLabel: 'Investigado (≤15 días hábiles)' },
     { key: 'fechaInvestigacion', label: 'Fecha investigación', type: 'date' },
-    { key: 'causasInmediatas', label: 'Causas inmediatas', type: 'textarea', ancho: 'full' },
+    { key: 'causasInmediatas', label: 'Causas inmediatas (actos y condiciones subestándar)', type: 'textarea', ancho: 'full' },
     { key: 'causasBasicas', label: 'Causas básicas', type: 'textarea', ancho: 'full' },
+    { key: 'factoresPersonales', label: 'Factores personales', type: 'textarea', ancho: 'full' },
+    { key: 'factoresTrabajo', label: 'Factores de trabajo', type: 'textarea', ancho: 'full' },
   ],
 })
 

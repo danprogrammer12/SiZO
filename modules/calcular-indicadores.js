@@ -98,6 +98,12 @@ export function calcularIndicadores(seg, meta = {}) {
   // Casos médicos abiertos
   kpis.casosAb = seg.casosAb || 0
 
+  // Incidencia de enfermedad laboral (Res. 0312/2019: casos nuevos EL × 100.000 / promedio trabajadores)
+  // Distinto del factor 240.000 (HHT, Dec. 1072) usado en IFA/IFM/ISA — no confundir.
+  kpis.incidenciaEl = seg.casosEl > 0
+    ? +((seg.casosEl * 100000) / trab).toFixed(2)
+    : 0
+
   // Días sin accidente
   kpis.diasSinAt = seg.fechaUltimoAt
     ? Math.floor((Date.now() - new Date(seg.fechaUltimoAt).getTime()) / 864e5)

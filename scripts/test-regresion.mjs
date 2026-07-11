@@ -57,7 +57,7 @@ async function test2() {
   const { empId, aud } = await ctx()
   const year = 2099, mes = 1
   const id = `test_${empId}_${year}_${mes}`
-  const base = { id, empresa_id: empId, year, mes, ...aud, trab: 40, dias_trab: 22, dias_aus: 22, act_prog: 10, act_ejec: 8, at_oc: 2 }
+  const base = { id, empresa_id: empId, year, mes, ...aud, trab: 40, dias_trab: 22, dias_aus: 22, act_prog: 10, act_ejec: 8, at_oc: 2, casos_el: 3 }
 
   await admin.from('seguimiento').delete().eq('id', id)
   await admin.from('seguimiento').upsert(base)
@@ -77,6 +77,8 @@ async function test2() {
   check('Indicador plan correcto',       kpis.plan === 90,    `plan = ${kpis.plan}% (esperado 90%)`)
   check('Indicador ausentismo correcto', kpis.aus  === 2.5,   `aus = ${kpis.aus}% (esperado 2.5%)`)
   check('Indicador IFA correcto (Dec. 1072 × 240.000 HHT)', kpis.ifa === 68.18, `IFA = ${kpis.ifa} (esperado 68.18)`)
+  check('Indicador incidencia EL correcto (Res. 0312 × 100.000 trab)', kpis.incidenciaEl === 7500,
+    `incidenciaEl = ${kpis.incidenciaEl} (esperado 7500)`)
 
   await admin.from('seguimiento').delete().eq('id', id)
 }
@@ -172,6 +174,36 @@ async function test5() {
   }
 }
 
+// ── TEST 6 — CRUD casos_medicos, auditorias y trazabilidad acciones.origen_id ──
+async function test6() {
+  console.log('\nTEST 6 — CRUD casos_medicos/auditorias y trazabilidad hallazgo→acción')
+  const { empId, aud } = await ctx()
+
+  const { data: auditoria, error: e1 } = await admin.from('auditorias').insert({
+    ...aud, empresa_id: empId, year: 2099, tipo: 'interna', fecha: '2099-01-01',
+    auditor: 'REGRESION', estado: 'completada', hallazgos: 'Hallazgo de prueba',
+  }).select('*').single()
+  check('Crear auditoría', !e1 && auditoria?.id, e1?.message || `id ${auditoria?.id}`)
+
+  const { data: accion, error: e2 } = await admin.from('acciones').insert({
+    ...aud, empresa_id: empId, tipo: 'correctiva', origen: 'auditoria', origen_id: auditoria.id,
+    descripcion: 'REGRESION', responsable: 'Test', fecha_limite: '2099-01-01',
+    prioridad: 'alta', estado: 'abierta',
+  }).select('*').single()
+  check('Acción referencia el id de la auditoría de origen', !e2 && accion?.origen_id === auditoria.id,
+    e2?.message || `origen_id = ${accion?.origen_id}`)
+
+  const { data: caso, error: e3 } = await admin.from('casos_medicos').insert({
+    ...aud, empresa_id: empId, trabajador: 'REGRESION', tipo: 'EL',
+    diagnostico: 'Prueba', fecha_apertura: '2099-01-01', estado: 'abierto',
+  }).select('*').single()
+  check('Crear caso médico', !e3 && caso?.id, e3?.message || `id ${caso?.id}`)
+
+  for (const [tabla, id] of [['acciones', accion.id], ['auditorias', auditoria.id], ['casos_medicos', caso.id]]) {
+    await admin.from(tabla).delete().eq('id', id) // limpieza real
+  }
+}
+
 async function main() {
   console.log('═══════════════════════════════════════════')
   console.log('  SIZO — PRUEBAS DE REGRESIÓN')
@@ -181,6 +213,7 @@ async function main() {
   await test3()
   await test4()
   await test5()
+  await test6()
   console.log('\n═══════════════════════════════════════════')
   console.log(`  RESULTADO: ${pasaron} PASS · ${fallaron} FAIL`)
   console.log('═══════════════════════════════════════════')

@@ -64,10 +64,10 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 | Inspecciones | `modules/inspecciones.js` | |
 | Capacitación | `modules/capacitacion.js` | |
 | Plan | `modules/plan.js` | |
-| Auditoría | `modules/auditoria.js` | |
-| Casos médicos | `modules/casos.js` | Solo ADMIN — política RLS `for all` |
-| Indicadores | `modules/indicadores.js` | Motor extraído en `modules/calcular-indicadores.js` (puro, sin DOM). Base HHT = trab × diasTrab × 8; escala 240.000 (Dec. 1072 Art. 2.2.4.1.7). |
-| Maestro | `modules/maestro.js` | 20 KPIs en catálogo |
+| Auditoría | `modules/auditoria.js` | Implementado 2026-07-11 (era un stub "en construcción" pese a que la tabla `auditorias` ya existía). `evaluaciones` (jsonb por estándar Res. 0312) queda vacío en v1. |
+| Casos médicos | `modules/casos.js` | Solo ADMIN — política RLS `for all`. Implementado 2026-07-11 (era un stub "en construcción" pese a que la tabla `casos_medicos` ya existía). |
+| Indicadores | `modules/indicadores.js` | Motor extraído en `modules/calcular-indicadores.js` (puro, sin DOM). Base HHT = trab × diasTrab × 8; escala 240.000 (Dec. 1072 Art. 2.2.4.1.7) para IFA/IFM/ISA. `incidenciaEl` usa escala 100.000 (Res. 0312/2019) — no confundir las dos escalas. |
+| Maestro | `modules/maestro.js` | 21 KPIs en catálogo |
 | Perfil | `modules/perfil.js` | |
 | Archivos | `modules/archivos.js` | PDFs: subir, previsualizar (modal 2 columnas con `<object>`), firmar (pdf-lib: firma dibujada o imagen + notas incrustadas), descargar, soft-delete. Tutorial 6 pasos. |
 
