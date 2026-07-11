@@ -27,6 +27,7 @@ const CATALOGO = {
   em:      { nom: 'Plan de emergencias',                meta: 100, inv: false, tipo: 'Proceso',   u: '%',           periodicidad: 'Mensual',  normativa: 'Dec. 1072/2015', formula: 'Actividades ejecutadas / programadas × 100' },
   casosAb: { nom: 'Casos médicos abiertos',             meta: 0,   inv: true,  tipo: 'Proceso',   u: 'casos',       periodicidad: 'Mensual',  normativa: '—', formula: 'Conteo de casos médicos abiertos al cierre' },
   diasSinAt: { nom: 'Días sin accidentes',              meta: null, inv: false, tipo: 'Resultado', u: 'días',       periodicidad: 'Continua', normativa: 'Dec. 1072/2015', formula: 'Días transcurridos desde el último AT' },
+  incidenciaEl: { nom: 'Incidencia de enfermedad laboral', meta: 0, inv: true,  tipo: 'Resultado', u: '×100.000 trab', periodicidad: 'Anual', normativa: 'Res. 0312/2019', formula: '(Casos nuevos EL × 100.000) / N° trabajadores' },
 }
 
 // Indicadores destacados en las tarjetas del dashboard, en orden

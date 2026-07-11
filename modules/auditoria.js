@@ -1,20 +1,41 @@
-// SIZO — Auditoría y Revisión por la Dirección (Fase 4)
-import { get } from '../store.js'
+// SIZO — Auditoría interna y revisión por la dirección (Dec. 1072/2015 Art. 2.2.4.6.29-31)
+import { crearModulo, fmtFecha, badge } from './_crud.js'
 
-async function render(container) {
-  container.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">Auditoría</h2>
-        <p class="page-subtitle">Auditorías internas, externas y revisión por la dirección</p>
-      </div>
-    </div>
-    <div class="empty-state">
-      <div class="empty-state-icon">📄</div>
-      <h3 class="empty-state-title">Módulo en construcción</h3>
-      <p class="text-muted">Disponible en Fase 4 — Módulos Complementarios</p>
-    </div>
-  `
-}
+const ESTADO_BADGE = { pendiente: 'badge-neutral', en_proceso: 'badge-warning', completada: 'badge-success' }
+
+const { render } = crearModulo({
+  tabla: 'auditorias',
+  titulo: 'Auditoría',
+  subtitulo: 'Auditorías internas, externas y revisión por la dirección',
+  icono: '📄',
+  labelNuevo: 'Nueva auditoría',
+  ordenPor: 'fecha',
+  columnas: [
+    { key: 'fecha', label: 'Fecha', format: fmtFecha },
+    { key: 'tipo', label: 'Tipo', format: v => badge(v === 'interna' ? 'Interna' : 'Externa',
+        { Interna: 'badge-brand', Externa: 'badge-neutral' }) },
+    { key: 'auditor', label: 'Auditor' },
+    { key: 'puntajeGlobal', label: 'Puntaje', format: v => v != null ? `${v}/100` : '—' },
+    { key: 'estado', label: 'Estado', format: v => badge(v.replace('_', ' '), { [v.replace('_',' ')]: ESTADO_BADGE[v] }) },
+  ],
+  campos: [
+    { key: 'year', label: 'Año', type: 'number', required: true, default: new Date().getFullYear() },
+    { key: 'tipo', label: 'Tipo de auditoría', type: 'select', required: true, options: [
+      { value: 'interna', label: 'Interna' }, { value: 'externa', label: 'Externa' } ] },
+    { key: 'fecha', label: 'Fecha', type: 'date', required: true },
+    { key: 'auditor', label: 'Auditor', type: 'text', required: true },
+    { key: 'alcance', label: 'Alcance', type: 'textarea', ancho: 'full' },
+    { key: 'puntajeGlobal', label: 'Puntaje global (0-100)', type: 'number', min: 0 },
+    { key: 'hallazgos', label: 'Hallazgos', type: 'textarea', ancho: 'full' },
+    { key: 'compromisos', label: 'Compromisos / plan de acción', type: 'textarea', ancho: 'full' },
+    { key: 'estado', label: 'Estado', type: 'select', required: true, default: 'pendiente', options: [
+      { value: 'pendiente', label: 'Pendiente' }, { value: 'en_proceso', label: 'En proceso' }, { value: 'completada', label: 'Completada' } ] },
+    { key: 'obs', label: 'Observaciones', type: 'textarea', ancho: 'full' },
+  ],
+  antesDeGuardar: (payload) => {
+    // evaluaciones detalladas por estándar Res. 0312 se modelan como jsonb; v1 guarda objeto vacío
+    if (payload.evaluaciones == null) payload.evaluaciones = {}
+  },
+})
 
 export { render }

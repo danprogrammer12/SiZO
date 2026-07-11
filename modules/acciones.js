@@ -26,6 +26,7 @@ const { render } = crearModulo({
     { key: 'origen', label: 'Origen', type: 'select', required: true, options: [
       { value: 'inspeccion', label: 'Inspección' }, { value: 'accidente', label: 'Accidente' }, { value: 'auditoria', label: 'Auditoría' },
       { value: 'seguimiento', label: 'Seguimiento' }, { value: 'revision_direccion', label: 'Revisión dirección' }, { value: 'otro', label: 'Otro' } ] },
+    { key: 'origenId', label: 'ID del hallazgo/registro de origen', type: 'text' },
     { key: 'descripcion', label: 'Descripción', type: 'textarea', required: true, ancho: 'full' },
     { key: 'responsable', label: 'Responsable', type: 'text', required: true },
     { key: 'fechaLimite', label: 'Fecha límite', type: 'date', required: true },
