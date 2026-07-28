@@ -56,7 +56,7 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 | Matriz de Riesgos | `modules/matriz-riesgos.js` | IPVR/GTC 45. Motor de cálculo puro en `modules/calcular-riesgo-gtc45.js` (ND×NE=probabilidad, probabilidad×NC=nivel de riesgo → zona I-IV + aceptabilidad). Los niveles se calculan en `antesDeGuardar` y se persisten ya resueltos, no en vivo dentro del modal. |
 | Matriz de EPP | `modules/matriz-epp.js` | Cruza cargo con EPP requerido; `peligro_id` referencia opcionalmente `matriz_riesgos.id`. |
 | Entrega de EPP | `modules/entrega-epp.js` | Evidencia de entrega individual firmada (Dec. 1072 Art. 2.2.4.6.24). |
-| Documentación SST | `modules/documentos-sst.js` | Política, objetivos, matriz de requisitos legales, manual del SG-SST. Badge de vigencia calculado en el listado (no persistido). |
+| **Gestor Documental** | `modules/gestor-documental.js` | Núcleo del producto (2026-07-15). Fusiona los antiguos `archivos.js` + `documentos-sst.js` sobre la tabla `documentos`: repositorio central con categoría, empresa, vigencia (Vigente/Por vencer 30d/Vencido), historial de versiones (`raizId`/`versionAnteriorId`/`esActual`), firma pdf-lib, previsualización, descarga, soft-delete. Tablas viejas `archivos`/`documentos_sst` no se eliminaron (respaldo histórico), ver `supabase/migrations/008_gestor_documental.sql`. |
 | Actas de Comités | `modules/actas.js` | COPASST y Comité de Convivencia Laboral en una sola tabla (`actas.tipo`). |
 | Accidentes | `modules/accidentes.js` | |
 | Ausentismo | `modules/ausentismo.js` | |
@@ -69,9 +69,8 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 | Indicadores | `modules/indicadores.js` | Motor extraído en `modules/calcular-indicadores.js` (puro, sin DOM). Base HHT = trab × diasTrab × 8; escala 240.000 (Dec. 1072 Art. 2.2.4.1.7) para IFA/IFM/ISA. `incidenciaEl` usa escala 100.000 (Res. 0312/2019) — no confundir las dos escalas. |
 | Maestro | `modules/maestro.js` | 21 KPIs en catálogo |
 | Perfil | `modules/perfil.js` | |
-| Archivos | `modules/archivos.js` | PDFs: subir, previsualizar (modal 2 columnas con `<object>`), firmar (pdf-lib: firma dibujada o imagen + notas incrustadas), descargar, soft-delete. Tutorial 6 pasos. |
 
-**Descarga de plantillas SGSST:** `components/exportar-plantilla.js` centraliza la exportación a Excel (SheetJS) y PDF (jsPDF+autoTable) de cualquier módulo tabular. `botonesDescarga({ tabla, titulo, columnas, nombreBase, urlOficial })` genera los botones "Excel"/"PDF" (releen la tabla en cada click, no dependen del estado interno del CRUD) y, si se pasa `urlOficial`, un botón "Formato oficial" que enlaza a la fuente pública (ARL/universidad) del formato en blanco — no se redistribuye la GTC 45 de ICONTEC (es de pago) sino recreaciones libres equivalentes. Cableado en: matriz-riesgos, matriz-epp, entrega-epp, documentos-sst, actas, casos, auditoria. **Cuidado:** el título pasado a `exportarExcel` se usa como nombre de hoja — Excel prohíbe `: \ / ? * [ ]`, ya saneado en la función pero no uses esos caracteres en `titulo` de otros módulos sin pasar por `botonesDescarga`.
+**Descarga de plantillas SGSST:** `components/exportar-plantilla.js` centraliza la exportación a Excel (SheetJS) y PDF (jsPDF+autoTable) de cualquier módulo tabular. `botonesDescarga({ tabla, titulo, columnas, nombreBase, urlOficial })` genera los botones "Excel"/"PDF" (releen la tabla en cada click, no dependen del estado interno del CRUD) y, si se pasa `urlOficial`, un botón "Formato oficial" que enlaza a la fuente pública (ARL/universidad) del formato en blanco — no se redistribuye la GTC 45 de ICONTEC (es de pago) sino recreaciones libres equivalentes. Cableado en: matriz-riesgos, matriz-epp, entrega-epp, actas, casos, auditoria (el Gestor Documental no usa este componente — es la vista completa del repositorio, no un listado exportable). **Cuidado:** el título pasado a `exportarExcel` se usa como nombre de hoja — Excel prohíbe `: \ / ? * [ ]`, ya saneado en la función pero no uses esos caracteres en `titulo` de otros módulos sin pasar por `botonesDescarga`.
 
 ---
 
@@ -129,6 +128,11 @@ Resultado actual: **24 PASS · 0 FAIL** (unit + mecánica) · **7 PASS · 0 FAIL
 | `005_billing.sql` | Billing multitenant: estado/límite en `tenants`, `is_superadmin()` | ✅ |
 | `006_matriz_riesgos.sql` | Tabla `matriz_riesgos` (IPVR/GTC 45) | ✅ aplicada 2026-07-11 |
 | `007_epp_documentos_actas.sql` | Tablas `matriz_epp`, `entrega_epp`, `documentos_sst`, `actas` | ✅ aplicada 2026-07-11 |
+| `008_gestor_documental.sql` | Tabla `documentos` (fusión de `archivos` + `documentos_sst`, con versionado). Copia datos existentes, no elimina las tablas viejas. | ✅ aplicada 2026-07-15 |
+| `009_fix_documentos_rls.sql` | Intento 1 de fix del soft-delete de `documentos` (WITH CHECK explícito). No resolvió — la causa real era otra (ver 011). | ✅ aplicada 2026-07-16, superada por 011 |
+| `010_simplificar_rls_documentos.sql` | Intento 2 (quita subquery innecesaria en `can_write_empresa`). Tampoco resolvió. | ⏳ no aplicada — saltar directo a 011 |
+| `011_fix_cache_rls_documentos.sql` | Intento 3 (envuelve `is_admin()`/`tenant_id()`/`user_role()` en `(select ...)`, mismo motivo que H10). Tampoco resolvió — probado con `check=true` confirmado en transacción atómica justo antes del UPDATE fallido. | ✅ aplicada 2026-07-16, no resolvió |
+| `012_rpc_soft_delete_documento.sql` | Workaround real: función `soft_delete_documento(uuid)` `SECURITY DEFINER` — valida permisos en PL/pgSQL y actualiza como dueño de tabla, evitando el UPDATE directo vía RLS que queda sin explicación (ver notas 2026-07-16 abajo). `gestor-documental.js` usa `supabase.rpc('soft_delete_documento', ...)` en vez de `db.softDelete`. | ⏳ pendiente de aplicar |
 
 ---
 
@@ -171,3 +175,7 @@ Todos resueltos. Informe: `testing/QA/INFORME-AUDITORIA-2026-06-15.md`
 - **Bug corregido:** `object-src 'none'` en ambos (meta + `serve.json`) bloqueaba por completo el `<object type="application/pdf">` usado para previsualizar PDFs en `modules/archivos.js`. Se cambió a `object-src 'self' https://ifqzdrqzjgsdhjbqkbba.supabase.co` en los dos lugares.
 - **Previsualización de PDF independiente de firmar:** se agregó `data-accion="previsualizar"` (botón de ojo + click en el nombre del archivo) en `modules/archivos.js`, que abre un modal de solo lectura (`abrirPrevisualizar`) sin pasar por el flujo de firma. El modal de "Firmar / Notas" (`abrirFirmar`) sigue teniendo su propia vista previa para ese contexto.
 - Tras reiniciar `npm run serve`, el server no relee `serve.json` en caliente — hay que matar y volver a levantar el proceso para que los headers HTTP nuevos tomen efecto.
+
+## Notas adicionales (2026-07-16)
+
+- **Bug sin explicación raíz — UPDATE bloqueado por RLS en `documentos` pese a política correcta.** El soft-delete (`activo=false`) en la tabla `documentos` era rechazado con `42501 new row violates row-level security policy` para un usuario ADMIN, pese a probarse exhaustivamente que la política era correcta: se descartaron tabla duplicada, trigger custom, `pg_rules`, FK autorreferenciada (`raiz_id`/`version_anterior_id`), triggers internos de FK (`session_replication_role=replica`), interacción con `RETURNING`, y caché de plan genérico (wrapping `(select fn())` por H10). Prueba definitiva: dentro de la MISMA transacción/rol, un `SELECT` con la expresión exacta del `WITH CHECK` justo antes del `UPDATE` fallido devolvía `true`, y aun así el `UPDATE` era rechazado. Workaround aplicado (migración `012_rpc_soft_delete_documento.sql`): función `SECURITY DEFINER` que valida permisos en PL/pgSQL y hace el `UPDATE` como dueño de tabla, evitando el `UPDATE` directo vía RLS. **Si este mismo síntoma aparece en otra tabla** (soft-delete de `matriz_riesgos`, `actas`, etc. vía `_crud.js`/`db.softDelete`), replicar el mismo patrón RPC en vez de seguir depurando la policy — ya se agotó el espacio razonable de diagnóstico por SQL directo.

@@ -69,8 +69,32 @@ async function upsert(table, data) {
   return fromRow(out)
 }
 
+// Tablas donde el UPDATE directo vía PostgREST para poner activo=false
+// queda bloqueado por RLS sin explicación raíz (ver notas 2026-07-16 en
+// CLAUDE.md) — se resuelve vía función RPC SECURITY DEFINER en vez de
+// seguir depurando la policy tabla por tabla.
+const RPC_SOFT_DELETE = {
+  documentos: 'soft_delete_documento',
+  matriz_riesgos: 'soft_delete_matriz_riesgos',
+  actas: 'soft_delete_acta',
+}
+
+// No pide la fila de vuelta (`.select()`): las políticas RLS de SELECT
+// exigen `activo = true`, así que en cuanto esta misma escritura la pone
+// en `false` la fila deja de ser visible para el RETURNING y Postgres
+// rechaza la operación completa con "new row violates row-level security
+// policy" — aunque la política de UPDATE nunca mencione `activo`.
 async function softDelete(table, id) {
-  return update(table, id, { activo: false, deletedAt: new Date().toISOString() })
+  const rpcFn = RPC_SOFT_DELETE[table]
+  if (rpcFn) {
+    const { error } = await supabase.rpc(rpcFn, { p_id: id })
+    if (error) throw new Error(error.message)
+    return
+  }
+  const { uid } = ctx()
+  const row = toRow({ activo: false, deletedAt: new Date().toISOString(), updatedBy: uid, updatedAt: new Date().toISOString() })
+  const { error } = await supabase.from(table).update(row).eq('id', id)
+  if (error) throw new Error(error.message)
 }
 
 export default { list, getById, insert, update, upsert, softDelete, toRow, fromRow }
