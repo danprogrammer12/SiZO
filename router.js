@@ -13,7 +13,7 @@ const routes = {
   'matriz-riesgos': () => import('./modules/matriz-riesgos.js'),
   'matriz-epp':     () => import('./modules/matriz-epp.js'),
   'entrega-epp':    () => import('./modules/entrega-epp.js'),
-  'documentos-sst': () => import('./modules/documentos-sst.js'),
+  'gestor-documental': () => import('./modules/gestor-documental.js'),
   'actas':          () => import('./modules/actas.js'),
   'accidentes':   () => import('./modules/accidentes.js'),
   'ausentismo':   () => import('./modules/ausentismo.js'),
@@ -26,7 +26,6 @@ const routes = {
   'maestro':      () => import('./modules/maestro.js'),
   'indicadores':  () => import('./modules/indicadores.js'),
   'perfil':       () => import('./modules/perfil.js'),
-  'archivos':     () => import('./modules/archivos.js'),
   'superadmin':   () => import('./modules/superadmin.js'),
 }
 

@@ -1,0 +1,52 @@
+SIZO — Trabajo del día
+Fecha: 2026-06-30
+Hora: 06:50
+
+─────────────────────────────────────────────
+RESUMEN DE LO TRABAJADO
+─────────────────────────────────────────────
+
+1. MÓDULO SUPERADMIN (modules/superadmin.js) — NUEVO
+   Panel de gestión de tenants visible solo para usuarios con superadmin: true en app_metadata.
+   Funcionalidades: cambio de plan (Starter/Pro/Agencia), suspender/reactivar tenant,
+   marcar como pagado, extender trial +14 días. Muestra conteo de empresas vs. límite del plan.
+
+2. MIGRACIÓN 005 (supabase/migrations/005_billing.sql) — NUEVA, YA APLICADA EN SUPABASE
+   - Columnas `estado` (trial/activo/suspendido) y `empresas_limite` en tabla tenants
+   - Constraint de plan actualizado: enterprise → agencia (starter/pro/agencia)
+   - Sincronización de empresas_limite según plan existente
+   - trial_ends rellenado en tenants sin fecha
+   - Función is_superadmin() — lee app_metadata.superadmin del JWT
+   - Función plan_empresas_limite() — helper inmutable
+   - Políticas RLS: superadmin puede leer/actualizar todos los tenants y leer todas las empresas
+
+3. AUTH (auth.js)
+   - Expone flag `superadmin` en el objeto user del store
+   - Permite iniciar sesión sin tenant_id ni role (para el superadmin global)
+
+4. ROUTER (router.js)
+   - Ruta #superadmin registrada
+   - Guard: redirige a dashboard si el user no tiene superadmin: true
+
+5. SIDEBAR (components/sidebar.js)
+   - Sección "Plataforma" y ítem "Panel Admin" visibles solo para superadmin
+   - Ícono SVG icon_superadmin() agregado
+
+6. EMPRESAS (modules/empresas.js)
+   - Validación de billing al crear empresa nueva:
+     · Cuenta suspendida → error con mensaje al usuario
+     · Trial vencido → error con mensaje al usuario
+     · Límite de plan alcanzado → error con límite actual del plan
+
+─────────────────────────────────────────────
+DEPLOY
+─────────────────────────────────────────────
+Commit: da023a5
+Push a main → GitHub Actions completado exitosamente
+Producción verificada: https://danprogrammer12.github.io/SiZO
+Panel superadmin confirmado visualmente en producción.
+
+─────────────────────────────────────────────
+PENDIENTE
+─────────────────────────────────────────────
+- Verificar flujo de límite de plan en módulo Empresas (quedó sin hacer)
