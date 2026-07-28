@@ -1,0 +1,72 @@
+SIZO — Plan de trabajo
+Fecha: 2026-06-30
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CONTEXTO
+─────────────────────────────────────────────
+Estado actual del producto:
+- Billing validado en código pero sin verificar en producción (pendiente de ayer)
+- Módulo SUPERADMIN funcional — puede gestionar tenants
+- Todos los módulos SG-SST operativos (18 módulos)
+- Gap crítico: no existe flujo de autoregistro — cada nuevo cliente
+  requiere que el superadmin cree el tenant manualmente en la DB
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TAREAS DEL DÍA
+─────────────────────────────────────────────
+
+[ ] 1. Verificar flujo de billing en Empresas          ~15 min
+        Pendiente de ayer. Confirmar que las 3 validaciones funcionan
+        correctamente en producción:
+        · Cuenta suspendida → bloquea creación
+        · Trial vencido → bloquea creación
+        · Límite de plan alcanzado → bloquea con mensaje
+
+[ ] 2. Banner de plan/trial en topbar                  ~45 min
+        Mostrar al usuario autenticado:
+        · Si está en trial → "Trial: X días restantes"
+        · Si el trial venció → aviso de vencimiento
+        · Si está suspendido → aviso con link de contacto
+        · Si está activo → sin banner (no interrumpir)
+
+[ ] 3. Autoregistro público de tenants                 ~2–3 h
+        Flujo completo para que un nuevo cliente se registre solo:
+        a) Página pública de registro (#register) antes del login
+        b) Formulario: nombre empresa, nombre contacto, email, contraseña
+        c) Edge Function "registrar-tenant":
+           - Crea registro en tabla tenants (plan: starter, estado: trial)
+           - Crea usuario en Supabase Auth con app_metadata
+             (tenant_id, role: ADMIN)
+           - Envía email de verificación
+        d) Redirige al login tras registro exitoso
+
+[ ] 4. Tests + deploy a producción                     ~30 min
+        - Verificar flujos en local
+        - npm test (las 3 suites deben pasar)
+        - Commit + push → GitHub Actions → verificar en producción
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TOTAL ESTIMADO: 4–5 horas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+NOTAS
+─────────────────────────────────────────────
+- El ítem 3 es el más valioso: cierra el ciclo de ventas completo.
+  Sin él, cada cliente nuevo requiere intervención manual en la DB.
+- La Edge Function registrar-tenant necesita service_role (igual que
+  crear-usuario). Crear en supabase/functions/registrar-tenant/index.ts
+- Al tocar el CSP (si se agrega fetch a la Edge Function), actualizar
+  TANTO index.html (meta) COMO serve.json (header HTTP local).
+- Migraciones se aplican manualmente en Supabase Dashboard → SQL Editor.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROGRESO
+─────────────────────────────────────────────
+Tarea 1: [ ] pendiente
+Tarea 2: [ ] pendiente
+Tarea 3: [ ] pendiente
+Tarea 4: [ ] pendiente

@@ -1,0 +1,124 @@
+SIZO — Planificación de lo pendiente
+Fecha: 2026-07-11
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ESTADO ACTUAL (verificado en este momento)
+─────────────────────────────────────────────
+- Rama main sincronizada con origin. Último commit: f11ff9b
+  (autoregistro de tenants + modo demo + fix bug sidebar).
+- Tests: 24 PASS unit+mecánica · 7 PASS seguridad RLS · 0 FAIL.
+- Autoregistro público (#register) YA IMPLEMENTADO Y DESPLEGADO:
+  Edge Function registrar-tenant crea tenant + usuario ADMIN sin
+  intervención del superadmin. Esto cierra el gap crítico de ventas
+  que estaba pendiente desde el 2026-06-30.
+- Modo demo YA IMPLEMENTADO: botón "Ver demo" con login automático
+  a usuario CONSULTA restringido a empresas [DEMO].
+- Bug de sidebar (menú no filtraba por rol antes del primer login)
+  YA CORREGIDO.
+- 18 módulos SG-SST operativos + SUPERADMIN + billing (modelo de datos
+  y validaciones en código, ver abajo estado de verificación).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PENDIENTE — EN PAUSA POR DECISIÓN DEL USUARIO (2026-07-06)
+─────────────────────────────────────────────
+Billing/pagos no es prioridad ahora mismo. No retomar hasta pedirlo
+explícitamente:
+
+[ ] Verificar en producción las 3 validaciones de billing en Empresas
+    (suspendido / trial vencido / límite de plan alcanzado)
+[ ] Banner de plan/trial en topbar (días restantes, vencido, suspendido)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PENDIENTE — PRÓXIMOS PASOS SUGERIDOS
+─────────────────────────────────────────────
+
+1. Cerrar el ciclo de autoregistro                          ~1-2 h
+   [ ] Probar el flujo #register en producción de punta a punta
+       (crear tenant real de prueba, confirmar email, primer login)
+   [ ] Confirmar que el email de verificación llega y el remitente/
+       plantilla de Supabase está bien configurado (no genérico)
+   [ ] Definir qué pasa si el registro falla a mitad de camino
+       (tenant creado sin usuario, o viceversa) — ¿hay rollback
+       en la Edge Function registrar-tenant?
+
+2. Limpieza de artefactos de sesiones anteriores             ~10 min
+   [ ] plan-trabajo-2026-06-30.txt, trabajado-2026-06-30.txt e
+       informe-estado-SIZO-2026-07-06.pdf están untracked en git
+       desde hace días — decidir si se archivan fuera del repo,
+       se agregan a .gitignore, o se borran (ya cumplieron su función,
+       este nuevo plan los reemplaza)
+
+3. Gestión documental SGSST — ampliar plantillas digitalizadas
+   Ver informe completo: docs/investigacion-plantillas-sgsst-2026-07-11.md
+   Gaps TOTALES detectados (módulos que no existen hoy):
+   [x] Matriz de Identificación de Peligros y Valoración de Riesgos
+       (IPVR / GTC 45) — COMPLETADO 2026-07-11: migración 006, motor
+       calcular-riesgo-gtc45.js, módulo matriz-riesgos.js, ruta
+       #matriz-riesgos, ítem en sidebar. Tests: 17 PASS + 7 PASS RLS.
+       Verificado visualmente en navegador (Playwright).
+   [x] Matriz de EPP + formato de entrega individual firmada —
+       COMPLETADO 2026-07-11: migración 007 (matriz_epp, entrega_epp),
+       módulos matriz-epp.js / entrega-epp.js
+   [x] Documentación general del SG-SST (política, objetivos, matriz
+       de requisitos legales, manual) con control de vigencia —
+       COMPLETADO 2026-07-11: tabla documentos_sst, módulo
+       documentos-sst.js (badge Vigente/Vencido calculado en listado)
+   [x] Actas COPASST / comité de convivencia con periodicidad —
+       COMPLETADO 2026-07-11: tabla actas, módulo actas.js
+       Los 4 gaps totales de plantillas SGSST: 25 PASS + 7 PASS RLS,
+       verificado visualmente en navegador (Playwright, 0 errores).
+   Gaps PARCIALES — COMPLETADO 2026-07-11:
+   [x] accidentes.js — ya capturaba causas inmediatas/básicas; se
+       agregaron factoresPersonales/factoresTrabajo (columnas ya
+       existían en el schema, faltaban en el formulario)
+   [x] casos.js — HALLAZGO: era un stub "en construcción" pese a que
+       la tabla casos_medicos ya existía completa con RLS "solo
+       ADMIN". Se construyó el CRUD real.
+   [x] calcular-indicadores.js — se agregó incidenciaEl (Res. 0312,
+       escala 100.000) además de IFA/IFM/ISA (escala 240.000 HHT);
+       no había mezcla de factores, simplemente faltaba el indicador
+   [x] auditoria.js → acciones.js — HALLAZGO: auditoria.js también
+       era un stub. Se construyó el CRUD real + se expuso el campo
+       origen_id (ya existía en el schema) en acciones.js para
+       trazar una acción hasta su hallazgo de origen
+   Tests: 29 PASS + 7 PASS RLS. Verificado visualmente en navegador.
+
+   [x] Descarga de plantillas en formato oficial (Excel + PDF) —
+       COMPLETADO 2026-07-11: components/exportar-plantilla.js,
+       exportador genérico (SheetJS + jsPDF/autoTable) cableado en
+       los 7 módulos de plantillas SGSST (matriz-riesgos, matriz-epp,
+       entrega-epp, documentos-sst, actas, casos, auditoria) vía
+       botonesDescarga(). Cada módulo tiene botones "Excel" y "PDF"
+       que releen la tabla activa al momento del click, más un botón
+       "Formato oficial" (enlaza a la fuente pública ARL/universidad
+       del formato en blanco) en los 4 módulos donde existe una
+       referencia externa confiable (riesgos, matriz EPP, entrega EPP,
+       actas). No se redistribuye la GTC 45 de ICONTEC (es de pago),
+       solo recreaciones libres equivalentes.
+       Bug encontrado y corregido: el título se usaba sin sanear como
+       nombre de hoja de Excel — los títulos con "/" (actas, casos)
+       rompían la exportación porque Excel prohíbe : \ / ? * [ ] en
+       nombres de hoja.
+       Verificado: descarga real de Excel y PDF en los 7 módulos,
+       tanto en local como en producción (danprogrammer12.github.io/SiZO),
+       0 errores de consola. Contenido del PDF revisado visualmente
+       (layout tipo formulario oficial, columnas GTC 45 completas).
+
+4. Headers Cloudflare (H7, deuda de seguridad conocida)       pendiente
+   [ ] X-Frame-Options, X-Content-Type-Options, HSTS — requiere
+       dominio personalizado (aún sin definir)
+
+5. Dominio personalizado                                     sin definir
+   [ ] Necesario para: headers de Cloudflare (punto 4), imagen de marca
+       más profesional para autoregistro/ventas (hoy es github.io)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PREGUNTAS ABIERTAS PARA DECIDIR PRIORIDAD
+─────────────────────────────────────────────
+- ¿Retomamos billing (verificación + banner) ahora, o sigue en pausa?
+- ¿El foco de las próximas semanas es (a) cerrar autoregistro/ventas,
+  (b) ampliar cobertura de plantillas SGSST, o (c) infraestructura
+  (dominio + headers)?
