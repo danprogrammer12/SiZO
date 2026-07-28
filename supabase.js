@@ -5,8 +5,8 @@
 //   + sus polyfills /node/*.mjs, reescribir rutas a ./node/ y reemplazar vendor/.
 import { createClient } from './vendor/supabase-js@2.108.1.js'
 
-const SUPABASE_URL    = 'https://ifqzdrqzjgsdhjbqkbba.supabase.co'
-const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmcXpkcnF6amdzZGhqYnFrYmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNTIyMzcsImV4cCI6MjA5NjkyODIzN30.t1TCSiq9xNz7Dup4NNzwU5Xw5DFRl-wVDu-7eVAFMSo'
+const SUPABASE_URL    = 'https://zfdiloozznodysbsrqhv.supabase.co'
+const SUPABASE_ANON   = 'sb_publishable_0o5DgsXBP3FpLk6-Weo9Eg_4-BdIkP3'
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
