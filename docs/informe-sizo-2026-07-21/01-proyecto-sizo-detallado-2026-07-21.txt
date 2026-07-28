@@ -1,0 +1,266 @@
+SIZO — PROYECTO DETALLADO
+Documento generado: 2026-07-21
+Inicio del proyecto: 2026-06-13
+
+================================================================
+1. QUÉ ES SIZO
+================================================================
+SIZO es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) dirigido
+al mercado colombiano. Es un producto propio de Webcore Solutions (no es
+un desarrollo para un cliente externo, sino un producto que la empresa
+comercializa).
+
+- Nombre visual: SIZ◉
+- URL de producción: https://danprogrammer12.github.io/SiZO
+- Repositorio: https://github.com/danprogrammer12/SiZO
+- Supabase project ref: ifqzdrqzjgsdhjbqkbba
+- Tenant ADMIN de pruebas: danias12.dpa@gmail.com / tenant_id 33cca128-a52e-49c8-a1b7-1fa123a6fd5a
+
+================================================================
+2. LÍNEA DE TIEMPO DEL PROYECTO
+================================================================
+- 2026-06-13: Inicio. Commit inicial, configuración base, se descarta
+  Firebase como backend y se decide arquitectura sobre Supabase.
+  Se completan Fase 0, Fase 1 y Fase 2 (Core SG-SST).
+- 2026-06-15: Auditoría de seguridad completa (hallazgos H1 a H15),
+  todos resueltos (ver sección 6).
+- 2026-06-20: Migración 003 — optimización de RLS con InitPlan
+  (35 políticas / 14 tablas).
+- 2026-06-22: Ajustes de CSP (Content-Security-Policy) sincronizados
+  entre index.html y serve.json; corrección de bug de previsualización
+  de PDF bloqueada por object-src.
+- 2026-06-30: Autoregistro de tenants, modo demo, corrección de bug de
+  sidebar. Pendiente: billing (revisar límite de plan).
+- 2026-07-11: Implementación de Matriz de Riesgos (IPVR/GTC 45),
+  Matriz de EPP, Documentación general, Actas de Comités, Casos
+  Médicos y Auditoría (estos dos últimos existían como stubs "en
+  construcción" con tablas ya creadas en la base de datos).
+- 2026-07-15: Se crea el Gestor Documental, que fusiona los antiguos
+  módulos archivos.js y documentos-sst.js en un repositorio central
+  único (tabla documentos) con versionado, vigencia y firma digital.
+- 2026-07-16: Bug crítico de RLS en soft-delete de documentos (ver
+  sección 7) — resuelto con función RPC SECURITY DEFINER.
+- 2026-07-21 (hoy): Última actualización registrada — descarga de
+  plantillas SGSST en Excel/PDF con formato oficial.
+
+================================================================
+3. ARQUITECTURA TÉCNICA
+================================================================
+Stack:
+- Frontend: HTML/CSS/JavaScript vanilla — SPA sin framework, con
+  módulos ES (ES modules). Sin React/Vue/Angular.
+- Autenticación: Supabase Auth, JWT con app_metadata que contiene
+  tenant_id, role y empresas_ids.
+- Base de datos: Supabase PostgreSQL con Row Level Security (RLS)
+  multitenant.
+- Storage: Supabase Storage, bucket "documentos" (PDFs firmados).
+- Manipulación de PDF en cliente: pdf-lib (UMD) + signature-pad (UMD),
+  vendorizados en la carpeta vendor/.
+- Despliegue: GitHub Pages. Push a main despliega automáticamente.
+
+Decisiones de arquitectura clave:
+- SPA basada en hash: router.js carga módulos ES dinámicamente según
+  window.location.hash. El evento hashchange maneja la navegación
+  normal; popstate maneja el botón "Atrás" del navegador (en
+  particular el regreso al dashboard consolidado).
+- Store reactivo propio (store.js): funciones get/set/subscribe sin
+  dependencias externas. Los módulos se suscriben a "empresa" y
+  "periodo" para re-renderizarse cuando cambian.
+- Multitenancy real vía RLS: toda la seguridad efectiva vive en
+  Supabase (políticas RLS). El "gating" de rutas en el router es solo
+  para UX, no es una barrera de seguridad real.
+  Helpers RLS definidos en 001_schema_inicial.sql:
+    tenant_id(), is_admin(), user_role(), can_read_empresa(),
+    can_write_empresa()
+  Regla importante: usar (select tenant_id()) y no tenant_id()
+  directo, para evitar que la función se evalúe fila por fila
+  (optimización InitPlan, ver hallazgo H10).
+- Creación de usuarios: se hace vía Edge Function
+  (supabase/functions/crear-usuario/index.ts) porque requiere
+  privilegios service_role para escribir app_metadata, algo que no
+  se puede hacer desde el cliente.
+- Vendor: librerías de terceros como archivos UMD sueltos en vendor/,
+  que se publican junto con el resto del sitio. Se cargan con
+  new URL('../vendor/archivo.js', import.meta.url).href para que
+  funcione bajo el path base /SiZO/ de GitHub Pages.
+- Migraciones: se aplican manualmente en el SQL Editor del Supabase
+  Dashboard. No existe un psql local ni credenciales de base de datos
+  directas configuradas.
+
+================================================================
+4. MODELO DE ROLES
+================================================================
+- ADMIN: acceso total a todas las empresas del tenant.
+- ASESOR: solo puede ver/escribir las empresas que tiene asignadas
+  (según empresas_ids en el JWT).
+- CONSULTA: solo lectura de sus empresas asignadas, no puede crear,
+  editar ni eliminar.
+
+================================================================
+5. MÓDULOS EN PRODUCCIÓN (detalle técnico)
+================================================================
+Ver documento complementario "02-que-tiene-sizo" para el listado
+funcional. A nivel técnico, algunos módulos tienen lógica separada
+en motores puros sin DOM, para facilitar testing:
+- calcular-riesgo-gtc45.js: motor de cálculo de la Matriz de Riesgos.
+  Fórmula: ND × NE = Probabilidad; Probabilidad × NC = Nivel de
+  Riesgo → se traduce en zona (I a IV) y aceptabilidad. Los niveles
+  se calculan una sola vez al guardar (antesDeGuardar) y se persisten
+  ya resueltos, no se recalculan en vivo dentro del modal.
+- calcular-indicadores.js: motor de indicadores SG-SST. HHT
+  (Horas Hombre Trabajadas) = trabajadores × días trabajados × 8.
+  Para IFA/IFM/ISA se usa la escala 240.000 según Decreto 1072 Art.
+  2.2.4.1.7. Para "incidenciaEl" se usa la escala 100.000 según
+  Resolución 0312/2019 — son dos escalas distintas que no deben
+  confundirse.
+
+Componente compartido:
+- components/exportar-plantilla.js: centraliza exportación a Excel
+  (SheetJS) y PDF (jsPDF + autoTable) para cualquier módulo tabular.
+  Expone botonesDescarga({ tabla, titulo, columnas, nombreBase,
+  urlOficial }), que genera botones "Excel" y "PDF" (releen la tabla
+  en cada click, no dependen del estado interno del CRUD), y
+  opcionalmente un botón "Formato oficial" que enlaza a la fuente
+  pública (ARL o universidad) del formato en blanco. No se
+  redistribuye la GTC 45 de ICONTEC (es de pago), sino recreaciones
+  libres equivalentes. Está cableado en: matriz-riesgos, matriz-epp,
+  entrega-epp, actas, casos y auditoria. El Gestor Documental NO usa
+  este componente porque es la vista completa del repositorio, no un
+  listado exportable.
+  Cuidado técnico: el "titulo" pasado a exportarExcel se usa como
+  nombre de hoja de cálculo; Excel prohíbe los caracteres
+  : \ / ? * [ ] — ya están saneados dentro de la función, pero hay
+  que evitarlos si se llama fuera de botonesDescarga.
+
+================================================================
+6. AUDITORÍA DE SEGURIDAD (2026-06-15) — HALLAZGOS H1 A H15
+================================================================
+Todos los hallazgos fueron resueltos. Informe completo en:
+testing/QA/INFORME-AUDITORIA-2026-06-15.md
+
+H1  — XSS → se creó escape.js con función esc(), usada en toda
+      interpolación de datos en HTML.
+H2  — Tests no validaban RLS → se creó suite autenticada
+      test-seguridad-rls.mjs.
+H3  — Un usuario podía auto-actualizar su rol/tenant → trigger
+      usuarios_proteger_columnas.
+H4  — Conversión de claves rompía JSONB → case-convert.js con
+      conversión shallow que preserva JSONB.
+H5  — err.message se exponía al usuario final → errores.js entrega
+      mensaje genérico.
+H6  — supabase-js se cargaba desde CDN → vendorizado en
+      vendor/supabase-js@2.108.1.js.
+H7  — Sin Content-Security-Policy → se agregó <meta> CSP en
+      index.html. Los headers HTTP en Cloudflare siguen pendientes.
+H8  — Queries sin límite → db.js list() aplica .limit(500) por
+      defecto.
+H9  — El JWT no se refrescaba al volver al foco de la pestaña →
+      listener de visibilitychange que llama a refreshSession() en
+      auth.js.
+H10 — Políticas RLS sin InitPlan (se evaluaban fila por fila) →
+      se envolvieron las funciones en (select fn()) en todas las
+      políticas.
+H11 — El motor de indicadores estaba mezclado con lógica de DOM →
+      se extrajo a calcular-indicadores.js, puro.
+H12 — Cálculo de HHT incorrecto en IFA/IFM/ISA → corregido a base
+      240.000 según Decreto 1072.
+H13 — No existía recuperación de contraseña → se agregaron
+      #forgot-form / #reset-form y manejo del evento
+      PASSWORD_RECOVERY.
+H14 — El store tenía una variable desactualizada (_empresas) →
+      corregida y comentarios actualizados.
+H15 — Los nombres de los asesores no se resolvían en pantalla →
+      empresas.js ahora carga usuarios en paralelo para resolverlos.
+
+================================================================
+7. BUG DE RLS EN DOCUMENTOS (2026-07-16) — SIN EXPLICACIÓN RAÍZ
+================================================================
+El soft-delete (poner activo=false) en la tabla "documentos" era
+rechazado con el error 42501 ("new row violates row-level security
+policy") para un usuario ADMIN, a pesar de que la política de RLS
+era, tras verificación exhaustiva, correcta.
+
+Se descartaron como causa, uno por uno:
+- Tabla duplicada
+- Trigger personalizado
+- Revisión de pg_rules
+- Llave foránea autorreferenciada (raiz_id / version_anterior_id)
+- Triggers internos de llave foránea
+  (probado con session_replication_role=replica)
+- Interacción con la cláusula RETURNING
+- Caché de plan genérico (se probó envolver con
+  (select fn()) igual que en H10)
+
+Prueba definitiva de que no era un problema de la condición lógica:
+dentro de la MISMA transacción y con el MISMO rol, un SELECT que
+evaluaba exactamente la expresión del WITH CHECK justo antes del
+UPDATE fallido devolvía true — y aun así el UPDATE era rechazado.
+
+Se intentaron tres migraciones sucesivas antes de llegar al
+workaround definitivo:
+- 009_fix_documentos_rls.sql (WITH CHECK explícito) — no resolvió.
+- 010_simplificar_rls_documentos.sql (quitar subquery innecesaria
+  en can_write_empresa) — no resolvió, no llegó a aplicarse porque
+  se saltó directo al intento 3.
+- 011_fix_cache_rls_documentos.sql (mismo patrón InitPlan de H10)
+  — tampoco resolvió.
+
+Workaround aplicado y vigente (012_rpc_soft_delete_documento.sql):
+una función soft_delete_documento(uuid) con SECURITY DEFINER que
+valida los permisos en PL/pgSQL manualmente y ejecuta el UPDATE como
+dueño de la tabla, evitando por completo el camino de RLS que fallaba
+sin explicación. El módulo gestor-documental.js llama a esta función
+vía supabase.rpc('soft_delete_documento', ...) en lugar de usar
+db.softDelete.
+
+Nota para el futuro: si el mismo síntoma aparece en otra tabla
+(por ejemplo, soft-delete de matriz_riesgos o actas vía _crud.js /
+db.softDelete), la recomendación es replicar directamente el mismo
+patrón de función RPC en lugar de seguir depurando la política RLS,
+porque ya se agotó el espacio razonable de diagnóstico por SQL
+directo.
+
+================================================================
+8. ESTADO DE TESTS
+================================================================
+Comandos:
+  npm test                — corre las 3 suites
+  npm run test:unit       — round-trip JSONB, puro, sin red
+  npm run test:mecanica   — CRUD vía service_role, NO valida RLS
+  npm run test:seguridad  — RLS autenticada por rol, crea y limpia
+                             usuarios de prueba *.sizo.test
+
+Resultado más reciente registrado: 24 PASS / 0 FAIL (unit + mecánica)
+y 7 PASS / 0 FAIL (seguridad).
+
+================================================================
+9. MIGRACIONES SQL APLICADAS
+================================================================
+001_schema_inicial.sql          Schema base + helpers RLS — aplicada
+002_h3_proteger_usuarios.sql    Trigger de protección de columnas — aplicada
+003_h10_optimizar_rls.sql       InitPlan en 35 políticas / 14 tablas — aplicada 2026-06-20
+004_archivos.sql                Tabla archivos + bucket documentos — aplicada
+005_billing.sql                 Billing multitenant + is_superadmin() — aplicada
+006_matriz_riesgos.sql          Tabla matriz_riesgos (IPVR/GTC 45) — aplicada 2026-07-11
+007_epp_documentos_actas.sql    matriz_epp, entrega_epp, documentos_sst, actas — aplicada 2026-07-11
+008_gestor_documental.sql       Tabla documentos (fusión con versionado) — aplicada 2026-07-15
+009_fix_documentos_rls.sql      Intento 1 fix soft-delete — aplicada 2026-07-16, no resolvió
+010_simplificar_rls_documentos.sql  Intento 2 — NO aplicada, se saltó al intento 3
+011_fix_cache_rls_documentos.sql    Intento 3 — aplicada 2026-07-16, no resolvió
+012_rpc_soft_delete_documento.sql   Workaround real (RPC) — PENDIENTE de aplicar en producción
+
+Nota importante: la migración 012 es la que realmente resuelve el
+problema de soft-delete de documentos, pero según el registro está
+pendiente de aplicarse en Supabase — hay que verificar y aplicarla
+si aún no se ha hecho.
+
+================================================================
+10. PENDIENTES CONOCIDOS
+================================================================
+- Headers de seguridad HTTP en Cloudflare (X-Frame-Options,
+  X-Content-Type-Options, HSTS) — requieren dominio personalizado,
+  que todavía no está definido.
+- Verificar si la migración 012 (RPC soft-delete) ya fue aplicada en
+  producción.
+- Revisar límite de plan en el sistema de billing (pendiente desde
+  2026-06-30).

@@ -1,0 +1,140 @@
+SIZO — QUÉ ES Y QUÉ TIENE
+Documento generado: 2026-07-21
+Inicio del proyecto: 2026-06-13
+
+================================================================
+QUÉ ES SIZO
+================================================================
+SIZO es un ERP en la nube (SaaS) para gestionar el Sistema de Gestión
+de Seguridad y Salud en el Trabajo (SG-SST) de empresas colombianas.
+Es un producto propio de Webcore Solutions, pensado para venderse a
+múltiples empresas clientes (multitenant): cada tenant (cliente que
+contrata SIZO) puede administrar una o varias empresas dentro de su
+cuenta, con usuarios de distintos roles según lo que necesiten ver o
+modificar.
+
+En términos simples: es la herramienta digital que un encargado de
+SG-SST (interno de una empresa, o un asesor externo que atiende a
+varias empresas) usa para llevar todo el cumplimiento normativo en
+salud y seguridad en el trabajo en un solo lugar, con indicadores,
+alertas, documentos firmados digitalmente y reportes automáticos.
+
+Ejemplo de uso real: una firma de asesoría en SG-SST (el tenant) que
+atiende a 15 empresas clientes, entra a SIZO, selecciona una empresa,
+y desde ahí gestiona su matriz de riesgos, sus capacitaciones, sus
+accidentes reportados, su documentación legal, etc. Un asesor solo ve
+las empresas que tiene asignadas; un consultor de esas empresas puede
+entrar solo a mirar, sin poder editar nada.
+
+================================================================
+QUÉ TIENE (módulos funcionales)
+================================================================
+
+1. DASHBOARD
+   Vista consolidada de todas las empresas del tenant, y vista
+   individual al hacer clic en una empresa específica.
+
+2. SEGUIMIENTO
+   Seguimiento de indicadores de SG-SST por empresa y por periodo
+   de tiempo.
+
+3. EMPRESAS
+   Alta, edición y baja de empresas dentro del tenant, y asignación
+   de asesores a cada una.
+
+4. USUARIOS
+   Creación y administración de usuarios del sistema, con sus roles
+   (ADMIN, ASESOR, CONSULTA).
+
+5. MATRIZ DE RIESGOS (IPVR / GTC 45)
+   Identificación de peligros y valoración de riesgos según la
+   metodología GTC 45. Calcula automáticamente probabilidad, nivel
+   de riesgo, zona (I a IV) y aceptabilidad.
+
+6. MATRIZ DE EPP (Elementos de Protección Personal)
+   Cruza cada cargo de la empresa con los EPP que requiere, y puede
+   vincularse con los peligros identificados en la Matriz de Riesgos.
+
+7. ENTREGA DE EPP
+   Registro firmado digitalmente de la entrega individual de
+   elementos de protección a cada trabajador, según lo exige el
+   Decreto 1072.
+
+8. GESTOR DOCUMENTAL (el núcleo del producto)
+   Repositorio central de todos los documentos legales del SG-SST:
+   organiza por categoría y empresa, controla vigencia (vigente,
+   por vencer en 30 días, o vencido), guarda historial de versiones
+   de cada documento, permite firmar PDFs digitalmente, previsualizar,
+   descargar y eliminar documentos de forma segura.
+
+9. ACTAS DE COMITÉS
+   Registro de las reuniones del COPASST (Comité Paritario de
+   Seguridad y Salud en el Trabajo) y del Comité de Convivencia
+   Laboral.
+
+10. ACCIDENTES
+    Registro y seguimiento de accidentes laborales.
+
+11. AUSENTISMO
+    Registro y seguimiento del ausentismo laboral.
+
+12. ACCIONES
+    Gestión de planes de acción y tareas de mejora.
+
+13. INSPECCIONES
+    Registro de inspecciones de seguridad realizadas.
+
+14. CAPACITACIÓN
+    Registro de capacitaciones dictadas a los trabajadores.
+
+15. PLAN (Plan de Trabajo Anual)
+    Gestión del plan de trabajo anual en SG-SST.
+
+16. AUDITORÍA
+    Registro de auditorías internas del sistema de gestión, según
+    los estándares mínimos de la Resolución 0312.
+
+17. CASOS MÉDICOS
+    Registro de casos médicos de los trabajadores. Solo puede
+    verlos y gestionarlos el rol ADMIN, por tratarse de información
+    sensible.
+
+18. INDICADORES
+    Cálculo automático de los indicadores obligatorios del SG-SST:
+    Índice de Frecuencia de Accidentalidad (IFA), Índice de
+    Frecuencia de Mortalidad (IFM), Índice de Severidad de
+    Accidentalidad (ISA), e Incidencia, siguiendo las fórmulas y
+    escalas exigidas por el Decreto 1072 y la Resolución 0312/2019.
+
+19. MAESTRO
+    Catálogo consolidado de 21 indicadores clave (KPIs) del sistema.
+
+20. PERFIL
+    Configuración de la cuenta y datos personales del usuario.
+
+21. DESCARGA DE PLANTILLAS SGSST
+    Desde varios de los módulos anteriores (Matriz de Riesgos,
+    Matriz de EPP, Entrega de EPP, Actas, Casos Médicos, Auditoría)
+    se pueden descargar los datos en Excel o PDF con formato
+    profesional, y también acceder a un enlace al formato oficial
+    en blanco publicado por fuentes públicas (ARL o universidades).
+
+================================================================
+OTRAS CARACTERÍSTICAS DEL PRODUCTO
+================================================================
+- Multitenant: cada cliente (tenant) tiene sus datos completamente
+  aislados de los demás, protegidos a nivel de base de datos.
+- Roles diferenciados: ADMIN (todo), ASESOR (solo sus empresas
+  asignadas, puede editar), CONSULTA (solo sus empresas asignadas,
+  solo lectura).
+- Firma digital de documentos PDF directamente en el navegador, sin
+  necesidad de software externo.
+- Alertas de vigencia documental (vigente / por vencer / vencido).
+- Autoregistro de nuevos tenants y modo demo para probar el producto
+  sin necesidad de una cuenta real.
+- Sistema de billing (facturación) con estados y límites por plan.
+- Recuperación de contraseña integrada.
+- Seguridad reforzada: protección contra XSS, políticas de seguridad
+  de contenido (CSP), límite de resultados por consulta, refresco
+  automático de sesión, y una auditoría de seguridad completa ya
+  resuelta (ver documento técnico para el detalle).
