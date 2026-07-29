@@ -50,3 +50,7 @@ scripts/debug-*.mjs
 
 # Supabase CLI temporales
 supabase/.temp/
+
+# Playwright Test Outputs
+test-results/
+

@@ -12,9 +12,14 @@
     "test:unit": "node testing/QA/poc-jsonb-roundtrip.mjs",
     "test:mecanica": "node scripts/test-regresion.mjs",
     "test:seguridad": "node scripts/test-seguridad-rls.mjs",
-    "test:estres": "node scripts/test-estres.mjs"
+    "test:estres": "node scripts/test-estres.mjs",
+    "test:qa": "playwright test",
+    "test:qa:unit": "playwright test --project=unit",
+    "test:qa:api": "playwright test --project=api",
+    "test:qa:e2e": "playwright test --project=e2e"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "playwright": "^1.61.0",
     "serve": "^14.0.0"
   },

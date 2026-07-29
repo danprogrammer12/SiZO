@@ -31,7 +31,11 @@ async function ctx() {
   const { data: { users } } = await admin.auth.admin.listUsers()
   const u = users.find(x => x.email === E.SIZO_ADMIN_EMAIL.toLowerCase())
   const tid = u.app_metadata.tenant_id
-  const { data: emp } = await admin.from('empresas').select('id').eq('tenant_id', tid).like('nombre', '[DEMO]%').limit(1).single()
+  let { data: emp } = await admin.from('empresas').select('id').eq('tenant_id', tid).like('nombre', '[DEMO]%').limit(1).maybeSingle()
+  if (!emp) {
+    const { data: empAny } = await admin.from('empresas').select('id').eq('tenant_id', tid).limit(1).single()
+    emp = empAny
+  }
   return { tid, uid: u.id, empId: emp.id, aud: { tenant_id: tid, creado_por: u.id, updated_by: u.id } }
 }
 
