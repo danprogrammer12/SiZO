@@ -78,7 +78,7 @@ create policy "documentos: root lee todo"      on documentos      for select usi
 --    El cliente nunca inserta directo — únicamente ROOT puede leer.
 -- ─────────────────────────────────────────────────────────────
 create table plataforma_auditoria (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   actor_uid   uuid not null,
   actor_email text not null,
   accion      text not null,
