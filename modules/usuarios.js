@@ -6,7 +6,7 @@ import { esc }         from '../escape.js'
 import { errorUsuario } from '../errores.js'
 import { supabase }    from '../supabase.js'
 
-const FUNCTIONS_URL = 'https://ifqzdrqzjgsdhjbqkbba.supabase.co/functions/v1'
+const FUNCTIONS_URL = 'https://zfdiloozznodysbsrqhv.supabase.co/functions/v1'
 
 const ROL_LABELS = { ADMIN: 'Administrador', ASESOR: 'Asesor SST', CONSULTA: 'Consulta' }
 const ROL_BADGE  = { ADMIN: 'badge-danger', ASESOR: 'badge-brand', CONSULTA: 'badge-neutral' }

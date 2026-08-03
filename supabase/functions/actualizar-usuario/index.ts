@@ -1,10 +1,12 @@
 // Edge Function: actualizar-usuario
 // Actualiza empresas_ids y/o rol de un usuario existente en app_metadata y tabla usuarios.
-// Solo invocable por usuarios con rol ADMIN del mismo tenant.
+// Invocable por:
+//   - ADMIN: solo usuarios de SU PROPIO tenant, y no puede asignar rol ROOT.
+//   - ROOT:  cualquier usuario de cualquier tenant, incluido ascender/degradar a ROOT.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const ROLES_VALIDOS = ['ADMIN', 'ASESOR', 'CONSULTA']
+const ROLES_VALIDOS = ['ADMIN', 'ASESOR', 'CONSULTA', 'ROOT']
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -32,8 +34,12 @@ Deno.serve(async (req) => {
   const callerRol    = callerMeta.role as string
   const callerTenant = callerMeta.tenant_id as string
 
-  if (callerRol !== 'ADMIN') return json({ error: 'Solo los ADMIN pueden modificar usuarios' }, 403)
-  if (!callerTenant)         return json({ error: 'El usuario llamante no tiene tenant asignado' }, 403)
+  if (callerRol !== 'ADMIN' && callerRol !== 'ROOT') {
+    return json({ error: 'Solo ADMIN o ROOT pueden modificar usuarios' }, 403)
+  }
+  if (callerRol === 'ADMIN' && !callerTenant) {
+    return json({ error: 'El usuario llamante no tiene tenant asignado' }, 403)
+  }
 
   let body: { uid?: string; empresasIds?: string[]; rol?: string }
   try { body = await req.json() } catch { return json({ error: 'Body JSON inválido' }, 400) }
@@ -44,9 +50,13 @@ Deno.serve(async (req) => {
   if (rol && !ROLES_VALIDOS.includes(rol)) {
     return json({ error: `Rol inválido. Valores permitidos: ${ROLES_VALIDOS.join(', ')}` }, 400)
   }
-  if (rol === 'ROOT') return json({ error: 'El rol ROOT no puede asignarse desde esta función' }, 403)
+  if (rol === 'ROOT') {
+    // ROOT es una cuenta de plataforma sin tenant, no una promoción de un usuario
+    // existente (que siempre tiene tenant_id) — usar crear-usuario para eso.
+    return json({ error: 'ROOT no puede asignarse a un usuario existente; crear una cuenta ROOT nueva' }, 403)
+  }
 
-  // Verificar que el usuario a modificar pertenece al mismo tenant
+  // Verificar que el usuario a modificar exista y (si el caller es ADMIN) pertenezca a su tenant
   const { data: target, error: fetchErr } = await supabaseAdmin
     .from('usuarios')
     .select('id, tenant_id, rol, empresas_ids')
@@ -54,7 +64,9 @@ Deno.serve(async (req) => {
     .single()
 
   if (fetchErr || !target) return json({ error: 'Usuario no encontrado' }, 404)
-  if (target.tenant_id !== callerTenant) return json({ error: 'No puedes modificar usuarios de otro tenant' }, 403)
+  if (callerRol === 'ADMIN' && target.tenant_id !== callerTenant) {
+    return json({ error: 'No puedes modificar usuarios de otro tenant' }, 403)
+  }
 
   // Obtener app_metadata actual para hacer merge
   const { data: { user: targetAuth }, error: targetErr } = await supabaseAdmin.auth.admin.getUserById(uid)
@@ -84,6 +96,15 @@ Deno.serve(async (req) => {
     .eq('id', uid)
 
   if (dbErr) return json({ error: `Error actualizando tabla: ${dbErr.message}` }, 500)
+
+  if (callerRol === 'ROOT') {
+    await supabaseAdmin.from('plataforma_auditoria').insert({
+      actor_uid:   caller.id,
+      actor_email: caller.email || '',
+      accion:      'actualizar_usuario',
+      detalle:     { uid, tenantId: target.tenant_id, empresasIds, rol },
+    })
+  }
 
   return json({
     uid,

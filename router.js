@@ -34,11 +34,14 @@ const routes = {
 // La defensa real es la RLS de Supabase: aunque alguien manipule el hash,
 // las queries no retornarán datos sin el rol correcto en el JWT.
 const rolesPermitidos = {
-  'casos': ['ADMIN'],
+  'casos':     ['ADMIN'],
+  'superadmin': ['ROOT'],
 }
 
-// Rutas exclusivas de SUPERADMIN (flag en app_metadata, no rol de tenant)
-const rutasSuperadmin = new Set(['superadmin'])
+// ROOT no pertenece a ningún tenant — las rutas operativas (dashboard,
+// seguimiento, empresas, etc.) no le sirven de nada porque no tiene
+// `tenant_id`/`empresa` en el store. Se redirige siempre a su panel.
+const rutaPorDefectoRoot = 'superadmin'
 
 let moduloActual = null
 
@@ -46,12 +49,15 @@ async function navigate(ruta) {
   if (!ruta || !routes[ruta]) ruta = 'dashboard'
 
   const user = get('user')
-  if (rutasSuperadmin.has(ruta) && (!user || !user.superadmin)) {
-    ruta = 'dashboard'
+  const esRoot = user && user.rol === 'ROOT'
+
+  if (esRoot && ruta === 'dashboard') {
+    ruta = rutaPorDefectoRoot
   }
+
   const restriccion = rolesPermitidos[ruta]
   if (restriccion && user && !restriccion.includes(user.rol)) {
-    ruta = 'dashboard'
+    ruta = esRoot ? rutaPorDefectoRoot : 'dashboard'
   }
 
   window.location.hash = ruta

@@ -9,7 +9,7 @@
 
 import { esc } from '../../escape.js'
 
-const PROJECT_REF = 'ifqzdrqzjgsdhjbqkbba' // clave localStorage de supabase-js v2
+const PROJECT_REF = 'zfdiloozznodysbsrqhv' // clave localStorage de supabase-js v2
 
 let pass = 0, fail = 0
 function check(nombre, ok, detalle) {

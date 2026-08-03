@@ -6,8 +6,8 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 
 - **URL producción:** https://danprogrammer12.github.io/SiZO
 - **Repositorio:** https://github.com/danprogrammer12/SiZO
-- **Supabase project ref:** `ifqzdrqzjgsdhjbqkbba`
-- **Tenant ADMIN de pruebas:** `danias12.dpa@gmail.com` / tenant_id `33cca128-a52e-49c8-a1b7-1fa123a6fd5a`
+- **Supabase project ref:** `zfdiloozznodysbsrqhv` (el proyecto original `ifqzdrqzjgsdhjbqkbba` fue eliminado por inactividad y reconstruido desde cero el 2026-07-27/28 — ver `docs/estado-sizo-2026-07-28.md`)
+- **Tenant ADMIN de pruebas:** `danias12.dpa@gmail.com` / tenant_id `e2816d5d-1d6e-499f-b272-bb04cd22ac8b`
 
 ---
 
@@ -37,11 +37,27 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 
 ## Roles
 
-| Rol | Permisos |
-|-----|----------|
-| `ADMIN` | Acceso total a todas las empresas del tenant |
-| `ASESOR` | Solo sus empresas asignadas (`empresas_ids` en JWT) — puede escribir |
-| `CONSULTA` | Solo lectura de sus empresas asignadas — no puede crear/editar/eliminar |
+Jerarquía (2026-08-03): `ROOT → ADMIN → ASESOR → CONSULTA`.
+
+| Rol | Pertenece a tenant | Permisos |
+|-----|---------------------|----------|
+| `ROOT` | **No** — es de plataforma (Webcore Solutions) | Administra toda la plataforma SIZO: crea tenants y sus ADMIN, lectura global de todas las tablas (soporte/auditoría), gestiona planes/billing, suspende/reactiva/elimina cualquier usuario, ve auditoría global (`plataforma_auditoria`). **Nunca opera datos SG-SST de un cliente** (sin insert/update en tablas operativas). No tiene fila en `usuarios` (esa tabla exige `tenant_id not null`) — vive solo en Supabase Auth, `app_metadata = { "role": "ROOT" }` sin `tenant_id`. |
+| `ADMIN` | Sí | Acceso total a todas las empresas de su propio tenant. Puede crear/editar ASESOR, CONSULTA y **también ADMIN** dentro de su tenant (decisión 2026-08-03: se relajó la restricción original de "solo ROOT asigna ADMIN" para no depender de soporte de Webcore ante continuidad operativa). No puede crear tenants ni asignar rol ROOT. |
+| `ASESOR` | Sí | Solo sus empresas asignadas (`empresas_ids` en JWT) — puede escribir |
+| `CONSULTA` | Sí | Solo lectura de sus empresas asignadas — no puede crear/editar/eliminar |
+
+**Helpers RLS relevantes:** `is_root()` (nuevo en `014_rol_root.sql`) — cada tabla tiene una policy SELECT adicional `"<tabla>: root lee todo" using ((select is_root()))`, sumada (OR) a las políticas existentes sin tocarlas. `is_superadmin()` se redefine para aceptar tanto el flag legado `app_metadata.superadmin` como `is_root()` — transición, no romper cuentas viejas.
+
+**Edge Functions de gestión de usuarios/tenants** (`supabase/functions/`):
+- `crear-usuario` — ADMIN crea ASESOR/CONSULTA/ADMIN en su propio tenant; ROOT crea en cualquier tenant (requiere `tenantId` en el body) o crea otra cuenta ROOT.
+- `actualizar-usuario` — mismo patrón; ROOT puede editar cualquier usuario de cualquier tenant. Ninguno de los dos permite promover un usuario existente a ROOT (ROOT se crea como cuenta nueva vía `crear-usuario`, nunca por promoción — evita el conflicto de que `usuarios.tenant_id` es `not null`).
+- `gestionar-usuario-root` — nueva, exclusiva ROOT: suspender/reactivar/eliminar cualquier usuario (`ban_duration` en Auth + `activo`/`deleted_at` en `usuarios`).
+- `crear-tenant` — reescrita 2026-08-03: antes solo se invocaba con `service_role` desde script y asumía que el ADMIN ya existía en Auth; ahora la invoca ROOT desde el front, crea el usuario ADMIN desde cero (igual que `registrar-tenant`) y hace rollback si falla cualquier paso.
+- Todas registran en `plataforma_auditoria` cuando el actor es ROOT.
+
+**Frontend:** `router.js` redirige a ROOT de `dashboard` a `superadmin` (ROOT no tiene `tenant_id`/`empresa`, las rutas operativas no le sirven). `components/sidebar.js` oculta todos los ítems de tenant para ROOT y solo muestra la sección "Plataforma" (`modules/superadmin.js`, ahora con gestión de tenants, usuarios cross-tenant y auditoría, además del billing que ya tenía).
+
+**Pendiente de ejecutar en producción:** la primera cuenta ROOT (separada de tu cuenta ADMIN de Webcore, que sigue intacta) aún no existe — `crear-usuario` exige que quien llama YA sea ROOT, así que la primera cuenta no puede crearse desde el front. Usar `SIZO_ROOT_EMAIL=... node scripts/provision-root.mjs` (mismo patrón que `provision-admin.mjs`, con `service_role`) una sola vez.
 
 ---
 
@@ -69,6 +85,7 @@ SIZO (`SIZ◉`) es un ERP SaaS de Seguridad y Salud en el Trabajo (SG-SST) para 
 | Indicadores | `modules/indicadores.js` | Motor extraído en `modules/calcular-indicadores.js` (puro, sin DOM). Base HHT = trab × diasTrab × 8; escala 240.000 (Dec. 1072 Art. 2.2.4.1.7) para IFA/IFM/ISA. `incidenciaEl` usa escala 100.000 (Res. 0312/2019) — no confundir las dos escalas. |
 | Maestro | `modules/maestro.js` | 21 KPIs en catálogo |
 | Perfil | `modules/perfil.js` | |
+| **Panel de Plataforma** | `modules/superadmin.js` | Exclusivo ROOT (`sidebar.js` lo oculta a cualquier otro rol). Ampliado 2026-08-03: además de billing (planes/estado de tenants, ya existía), ahora crea tenants+ADMIN inicial (`crear-tenant`), lista y suspende/reactiva/elimina usuarios de cualquier tenant (`gestionar-usuario-root`, tabla `usuarios` vía policy `root lee todo`), y muestra auditoría global (`plataforma_auditoria`). Es el destino por defecto de ROOT en `router.js` (no `dashboard`, porque ROOT no tiene tenant). |
 
 **Descarga de plantillas SGSST:** `components/exportar-plantilla.js` centraliza la exportación a Excel (SheetJS) y PDF (jsPDF+autoTable) de cualquier módulo tabular. `botonesDescarga({ tabla, titulo, columnas, nombreBase, urlOficial })` genera los botones "Excel"/"PDF" (releen la tabla en cada click, no dependen del estado interno del CRUD) y, si se pasa `urlOficial`, un botón "Formato oficial" que enlaza a la fuente pública (ARL/universidad) del formato en blanco — no se redistribuye la GTC 45 de ICONTEC (es de pago) sino recreaciones libres equivalentes. Cableado en: matriz-riesgos, matriz-epp, entrega-epp, actas, casos, auditoria (el Gestor Documental no usa este componente — es la vista completa del repositorio, no un listado exportable). **Cuidado:** el título pasado a `exportarExcel` se usa como nombre de hoja — Excel prohíbe `: \ / ? * [ ]`, ya saneado en la función pero no uses esos caracteres en `titulo` de otros módulos sin pasar por `botonesDescarga`.
 
@@ -132,7 +149,9 @@ Resultado actual: **24 PASS · 0 FAIL** (unit + mecánica) · **7 PASS · 0 FAIL
 | `009_fix_documentos_rls.sql` | Intento 1 de fix del soft-delete de `documentos` (WITH CHECK explícito). No resolvió — la causa real era otra (ver 011). | ✅ aplicada 2026-07-16, superada por 011 |
 | `010_simplificar_rls_documentos.sql` | Intento 2 (quita subquery innecesaria en `can_write_empresa`). Tampoco resolvió. | ⏳ no aplicada — saltar directo a 011 |
 | `011_fix_cache_rls_documentos.sql` | Intento 3 (envuelve `is_admin()`/`tenant_id()`/`user_role()` en `(select ...)`, mismo motivo que H10). Tampoco resolvió — probado con `check=true` confirmado en transacción atómica justo antes del UPDATE fallido. | ✅ aplicada 2026-07-16, no resolvió |
-| `012_rpc_soft_delete_documento.sql` | Workaround real: función `soft_delete_documento(uuid)` `SECURITY DEFINER` — valida permisos en PL/pgSQL y actualiza como dueño de tabla, evitando el UPDATE directo vía RLS que queda sin explicación (ver notas 2026-07-16 abajo). `gestor-documental.js` usa `supabase.rpc('soft_delete_documento', ...)` en vez de `db.softDelete`. | ⏳ pendiente de aplicar |
+| `012_rpc_soft_delete_documento.sql` | Workaround real: función `soft_delete_documento(uuid)` `SECURITY DEFINER` — valida permisos en PL/pgSQL y actualiza como dueño de tabla, evitando el UPDATE directo vía RLS que queda sin explicación (ver notas 2026-07-16 abajo). `gestor-documental.js` usa `supabase.rpc('soft_delete_documento', ...)` en vez de `db.softDelete`. | ✅ aplicada — verificada 2026-08-03 vía llamada RPC directa (devolvió el error esperado "Documento no encontrado", confirmando que la función existe en la base) |
+| `013_rpc_soft_delete_general.sql` | Replica el patrón de 012 para `matriz_riesgos` y `actas` (`soft_delete_matriz_riesgos`, `soft_delete_acta`), mismo bloqueo RLS sin explicación raíz en esas tablas. | ✅ aplicada — verificada 2026-08-03 vía llamada RPC directa a ambas funciones |
+| `014_rol_root.sql` | Incorpora el rol `ROOT` (plataforma, sin tenant): helper `is_root()`, `is_superadmin()` acepta también `is_root()` (transición), `usuarios.rol` admite `'ROOT'` (aunque hoy no se inserta ninguna fila con ese rol), policy `tenants: root crea`, una policy SELECT `"<tabla>: root lee todo"` por cada una de las ~18 tablas del esquema, y tabla nueva `plataforma_auditoria` (solo legible por ROOT, solo se escribe desde Edge Functions con `service_role`). | ⏳ pendiente de aplicar |
 
 ---
 

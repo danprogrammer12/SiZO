@@ -26,8 +26,8 @@ const NAV_ITEMS = [
   { route: 'auditoria',   label: 'Auditoría',          icon: icon_auditoria },
   { route: 'actas',       label: 'Actas de Comités',   icon: icon_actas },
   { route: 'casos',       label: 'Casos Médicos',      icon: icon_casos, roles: ['ADMIN'] },
-  { divider: true, label: 'Plataforma', superadmin: true },
-  { route: 'superadmin',  label: 'Panel Admin',        icon: icon_superadmin, superadmin: true },
+  { divider: true, label: 'Plataforma', soloRoot: true },
+  { route: 'superadmin',  label: 'Panel de Plataforma', icon: icon_superadmin, soloRoot: true },
 ]
 
 function render() {
@@ -67,8 +67,11 @@ function render() {
 
 function renderNav() {
   const user = get('user')
+  const esRoot = user && user.rol === 'ROOT'
   return NAV_ITEMS.map(item => {
-    if (item.superadmin && (!user || !user.superadmin)) return ''
+    if (item.soloRoot && !esRoot) return ''
+    // ROOT no opera módulos de tenant — solo ve la sección "Plataforma"
+    if (!item.soloRoot && esRoot) return ''
     if (item.divider) {
       return `<div class="nav-divider">
         <span class="nav-divider-label">${item.label}</span>

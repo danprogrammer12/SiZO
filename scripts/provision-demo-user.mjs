@@ -21,7 +21,7 @@ const {
   SUPABASE_SERVICE_ROLE_KEY,
   SIZO_DEMO_EMAIL    = 'demo@sizosaas.co',
   SIZO_DEMO_PASSWORD = 'DemoSIZO2026!',
-  SIZO_DEMO_TENANT   = '33cca128-a52e-49c8-a1b7-1fa123a6fd5a',
+  SIZO_DEMO_TENANT   = 'e2816d5d-1d6e-499f-b272-bb04cd22ac8b',
 } = process.env
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {

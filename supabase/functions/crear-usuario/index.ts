@@ -1,10 +1,13 @@
 // Edge Function: crear-usuario
-// Crea un usuario en Auth + usuarios tabla para un tenant.
-// Solo invocable por usuarios con rol ADMIN del mismo tenant.
+// Crea un usuario en Auth (+ fila en `usuarios` salvo para ROOT).
+// Invocable por:
+//   - ADMIN: crea ADMIN/ASESOR/CONSULTA dentro de SU PROPIO tenant.
+//   - ROOT:  crea ADMIN/ASESOR/CONSULTA en CUALQUIER tenant (requiere tenantId
+//            en el body), o crea otra cuenta ROOT (sin tenant).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const ROLES_VALIDOS = ['ADMIN', 'ASESOR', 'CONSULTA']
+const ROLES_VALIDOS = ['ADMIN', 'ASESOR', 'CONSULTA', 'ROOT']
 
 const supabaseAdmin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -23,7 +26,6 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Verificar que el caller sea ADMIN del tenant
   const authHeader = req.headers.get('authorization') || ''
   const token = authHeader.replace(/^Bearer\s+/i, '')
 
@@ -32,26 +34,25 @@ Deno.serve(async (req) => {
   }
 
   // Decodificar JWT sin verificar firma (Supabase ya lo verificó al generar el token)
-  // Usamos getUser para validar el token contra Supabase Auth
   const { data: { user: caller }, error: authErr } = await supabaseAdmin.auth.getUser(token)
 
   if (authErr || !caller) {
     return json({ error: 'Token inválido o expirado' }, 401)
   }
 
-  const callerMeta  = caller.app_metadata || {}
-  const callerRol   = callerMeta.role as string
-  const callerTenant = callerMeta.tenant_id as string
+  const callerMeta   = caller.app_metadata || {}
+  const callerRol    = callerMeta.role as string
+  const callerTenant = callerMeta.tenant_id as string | undefined
 
-  if (callerRol !== 'ADMIN') {
-    return json({ error: 'Solo los usuarios ADMIN pueden crear usuarios' }, 403)
+  if (callerRol !== 'ADMIN' && callerRol !== 'ROOT') {
+    return json({ error: 'Solo ADMIN o ROOT pueden crear usuarios' }, 403)
   }
-  if (!callerTenant) {
+  if (callerRol === 'ADMIN' && !callerTenant) {
     return json({ error: 'El usuario llamante no tiene tenant asignado' }, 403)
   }
 
   // Parsear body
-  let body: { email?: string; nombre?: string; rol?: string; empresasIds?: string[] }
+  let body: { email?: string; nombre?: string; rol?: string; empresasIds?: string[]; tenantId?: string }
   try {
     body = await req.json()
   } catch {
@@ -66,20 +67,31 @@ Deno.serve(async (req) => {
   if (!ROLES_VALIDOS.includes(rol)) {
     return json({ error: `Rol inválido. Valores permitidos: ${ROLES_VALIDOS.join(', ')}` }, 400)
   }
-  if (rol === 'ROOT') {
-    return json({ error: 'El rol ROOT no puede crearse desde esta función' }, 403)
+
+  // Reglas de quién puede crear qué rol
+  if (callerRol === 'ADMIN' && rol === 'ROOT') {
+    return json({ error: 'ADMIN no puede crear cuentas ROOT' }, 403)
+  }
+
+  // Resolver tenant destino
+  let targetTenant: string | null = null
+  if (rol !== 'ROOT') {
+    targetTenant = callerRol === 'ADMIN' ? callerTenant! : (body.tenantId || null)
+    if (!targetTenant) {
+      return json({ error: 'Falta tenantId destino para crear un usuario con tenant' }, 400)
+    }
   }
 
   // Crear usuario en Supabase Auth
+  const appMetadata = rol === 'ROOT'
+    ? { role: 'ROOT' }
+    : { tenant_id: targetTenant, role: rol, empresas_ids: empresasIds }
+
   const { data: newAuth, error: createErr } = await supabaseAdmin.auth.admin.createUser({
     email:            email.toLowerCase().trim(),
     email_confirm:    true,
     user_metadata:    { nombre },
-    app_metadata:     {
-      tenant_id:    callerTenant,
-      role:         rol,
-      empresas_ids: empresasIds,
-    },
+    app_metadata:     appMetadata,
   })
 
   if (createErr) {
@@ -91,23 +103,29 @@ Deno.serve(async (req) => {
 
   const newUid = newAuth.user.id
 
-  // Insertar en tabla usuarios
-  const { error: insertErr } = await supabaseAdmin.from('usuarios').insert({
-    id:           newUid,
-    tenant_id:    callerTenant,
-    nombre:       nombre.trim(),
-    email:        email.toLowerCase().trim(),
-    rol:          rol,
-    activo:       true,
-    empresas_ids: empresasIds,
-    updated_by:   caller.id,
-    creado_por:   caller.id,
-  })
+  // ROOT no tiene fila en `usuarios` (esa tabla exige tenant_id not null)
+  if (rol !== 'ROOT') {
+    const { error: insertErr } = await supabaseAdmin.from('usuarios').insert({
+      id:           newUid,
+      tenant_id:    targetTenant,
+      nombre:       nombre.trim(),
+      email:        email.toLowerCase().trim(),
+      rol:          rol,
+      activo:       true,
+      empresas_ids: empresasIds,
+      updated_by:   caller.id,
+      creado_por:   caller.id,
+    })
 
-  if (insertErr) {
-    // Revertir: eliminar el usuario de Auth para no dejar estado inconsistente
-    await supabaseAdmin.auth.admin.deleteUser(newUid)
-    return json({ error: `Error al registrar usuario en la base de datos: ${insertErr.message}` }, 500)
+    if (insertErr) {
+      // Revertir: eliminar el usuario de Auth para no dejar estado inconsistente
+      await supabaseAdmin.auth.admin.deleteUser(newUid)
+      return json({ error: `Error al registrar usuario en la base de datos: ${insertErr.message}` }, 500)
+    }
+  }
+
+  if (callerRol === 'ROOT') {
+    await registrarAuditoria(caller, 'crear_usuario', { newUid, email, rol, tenantId: targetTenant })
   }
 
   // Enviar invitación para que el usuario establezca su contraseña
@@ -122,8 +140,17 @@ Deno.serve(async (req) => {
     console.warn('[crear-usuario] No se pudo generar link de invitación:', inviteErr.message)
   }
 
-  return json({ uid: newUid, email: email.toLowerCase().trim(), rol, tenant_id: callerTenant }, 201)
+  return json({ uid: newUid, email: email.toLowerCase().trim(), rol, tenant_id: targetTenant }, 201)
 })
+
+async function registrarAuditoria(caller: { id: string; email?: string }, accion: string, detalle: unknown) {
+  await supabaseAdmin.from('plataforma_auditoria').insert({
+    actor_uid:   caller.id,
+    actor_email: caller.email || '',
+    accion,
+    detalle,
+  })
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

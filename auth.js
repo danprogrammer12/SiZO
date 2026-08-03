@@ -106,9 +106,11 @@ const EVENTOS_ACTIVIDAD = ['mousemove', 'keydown', 'click', 'scroll', 'touchstar
 // ─────────────────────────────────────────────────────────────
 function resolverSesion(session) {
   const meta = session.user.app_metadata || {}
-  const esSuperadmin = meta.superadmin === true
+  // ROOT es un rol de plataforma sin tenant — reemplaza al flag superadmin
+  // booleano, que se conserva solo por compatibilidad con cuentas aún no migradas.
+  const esRoot = meta.role === 'ROOT' || meta.superadmin === true
 
-  if (!esSuperadmin && (!meta.tenant_id || !meta.role)) {
+  if (!esRoot && (!meta.tenant_id || !meta.role)) {
     throw new Error(
       'Tu cuenta no tiene tenant asignado. ' +
       'Contacta al administrador para que ejecute la provisión inicial.'
@@ -120,9 +122,9 @@ function resolverSesion(session) {
     email:      session.user.email,
     nombre:     session.user.user_metadata?.nombre || session.user.email,
     tenantId:   meta.tenant_id || null,
-    rol:        meta.role || null,
+    rol:        esRoot ? 'ROOT' : (meta.role || null),
     empresas:   meta.empresas_ids || [],
-    superadmin: esSuperadmin,
+    superadmin: esRoot,
   }
 }
 
