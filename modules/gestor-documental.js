@@ -628,6 +628,17 @@ async function abrirFirmar(doc) {
   const userFirmante = get('user')
   const nombreFirmante = userFirmante.nombre || userFirmante.email || 'Firmante'
 
+  // Logo de la empresa dueña del documento (no la empresa activa en el
+  // topbar — un documento "General" o de otra empresa no debe usar un
+  // logo ajeno). Se usa como sello/membrete independiente de la firma.
+  let empresaLogoPath = null
+  if (doc.empresaId) {
+    try {
+      const empresaDoc = await db.getById('empresas', doc.empresaId)
+      empresaLogoPath = empresaDoc?.logoPath || null
+    } catch { /* sin sello si falla la consulta */ }
+  }
+
   modal.open({
     title: `Firmar / Notas — ${esc(doc.nombre)}`,
     size: 'xl',
@@ -690,6 +701,13 @@ async function abrirFirmar(doc) {
             <input type="number" id="firma-pagina" class="form-input" value="1" min="1" max="9999" style="max-width:120px">
             <div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px" id="firma-info-paginas">Cargando…</div>
           </div>
+          ${empresaLogoPath ? `
+          <div class="form-group" style="margin-bottom:0">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:400">
+              <input type="checkbox" id="firma-incluir-sello" checked>
+              Incluir sello (logo) de la empresa
+            </label>
+          </div>` : ''}
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Notas</label>
             <textarea id="firma-notas" class="form-input" rows="4"
@@ -865,7 +883,7 @@ async function abrirFirmar(doc) {
     const pagina = parseInt(document.getElementById('firma-pagina').value, 10) || 1
     const tieneFirmaCanvas = _padActivo && !_padActivo.isEmpty()
 
-    if (!tieneFirmaCanvas && !_imagenFirmaFile && !notas) {
+    if (!tieneFirmaCanvas && !_imagenFirmaFile && !_firmaGeneradaDataUrl && !notas) {
       toast.error('Agrega una firma, imagen o notas antes de guardar')
       return
     }
@@ -874,8 +892,10 @@ async function abrirFirmar(doc) {
     btn.disabled = true
     btn.textContent = 'Procesando…'
 
+    const incluirSello = empresaLogoPath && document.getElementById('firma-incluir-sello')?.checked
+
     try {
-      await guardarFirma(doc, notas, pagina)
+      await guardarFirma(doc, notas, pagina, incluirSello ? empresaLogoPath : null)
       modal.close()
       toast.success('PDF actualizado correctamente')
       await cargarDocumentos()
@@ -887,7 +907,7 @@ async function abrirFirmar(doc) {
   })
 }
 
-async function guardarFirma(doc, notas, pagina) {
+async function guardarFirma(doc, notas, pagina, empresaLogoPath) {
   const { PDFDocument, rgb, StandardFonts } = window.PDFLib
 
   let arrayBuffer = _pdfBytesCache
@@ -954,6 +974,24 @@ async function guardarFirma(doc, notas, pagina) {
     const fechaStr = new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
     page.drawText(nombre,   { x: imgX, y: lineaY - 12, size: 7, font, color: gris })
     page.drawText(fechaStr, { x: imgX, y: lineaY - 21, size: 7, font, color: gris })
+  }
+
+  if (empresaLogoPath) {
+    try {
+      const { data: logoBlob, error: logoErr } = await supabase.storage.from('documentos').download(empresaLogoPath)
+      if (!logoErr && logoBlob) {
+        const logoBuffer = await logoBlob.arrayBuffer()
+        const esJpegLogo = (empresaLogoPath.split('.').pop() || '').toLowerCase().match(/^jpe?g$/)
+        const logoEmbed  = esJpegLogo ? await pdfDoc.embedJpg(logoBuffer) : await pdfDoc.embedPng(logoBuffer)
+
+        const selloMaxW = 60
+        const selloRatio = selloMaxW / logoEmbed.width
+        const selloW = logoEmbed.width  * selloRatio
+        const selloH = logoEmbed.height * selloRatio
+
+        page.drawImage(logoEmbed, { x: pw - MARGIN - selloW, y: ph - MARGIN - selloH, width: selloW, height: selloH })
+      }
+    } catch { /* el sello es decorativo — un fallo no debe bloquear la firma */ }
   }
 
   if (notas) {
