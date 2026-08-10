@@ -165,6 +165,7 @@ function bindEvents() {
         const emp = empresas.find(e => e.id === id)
         if (emp) set('empresa', emp)
       }
+      navigate('dashboard')
     } else {
       navigate(btn.dataset.route)
     }

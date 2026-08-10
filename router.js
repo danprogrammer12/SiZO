@@ -45,6 +45,12 @@ const rutaPorDefectoRoot = 'superadmin'
 
 let moduloActual = null
 
+// Distingue un popstate real (botón Atrás/Adelante del navegador) de uno
+// disparado como efecto colateral de nuestra propia asignación a location.hash
+// dentro de navigate() — de lo contrario, cada navigate() programático
+// dispara el listener de popstate de abajo y resetea `empresa` sin querer.
+let _skipProximoPopstate = false
+
 async function navigate(ruta) {
   if (!ruta || !routes[ruta]) ruta = 'dashboard'
 
@@ -60,6 +66,7 @@ async function navigate(ruta) {
     ruta = esRoot ? rutaPorDefectoRoot : 'dashboard'
   }
 
+  _skipProximoPopstate = true
   window.location.hash = ruta
 
   const view = document.getElementById('view')
@@ -98,6 +105,7 @@ window.addEventListener('hashchange', () => {
 // limpiar empresa (volver a vista consolidada) en lugar de saltar a otro módulo.
 // Se activa solo cuando dashboard.js hizo history.pushState al seleccionar empresa.
 window.addEventListener('popstate', () => {
+  if (_skipProximoPopstate) { _skipProximoPopstate = false; return }
   const ruta = (window.location.hash || '#dashboard').slice(1) || 'dashboard'
   if (ruta === 'dashboard' && get('empresa')) {
     set('empresa', null)

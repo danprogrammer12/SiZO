@@ -26,11 +26,18 @@ export function badge(valor, mapa) {
 export function crearModulo(cfg) {
   let _items = []
   let _unsub = []
+  // Referencia propia al contenedor de ESTA instancia — nunca se busca por
+  // id en `document` para evitar que una carga asíncrona tardía de otro
+  // módulo (con los mismos ids genéricos crud-root/crud-tabla) escriba
+  // sobre el DOM del módulo actual tras navegar rápido entre pantallas.
+  let _root = null
 
   async function render(container) {
     _unsub.forEach(fn => fn()); _unsub = []
     container.innerHTML = `<div id="crud-root"></div>`
-    const pintar = () => montar(document.getElementById('crud-root'))
+    _root = container.querySelector('#crud-root')
+    const miRoot = _root
+    const pintar = () => montar(miRoot)
     if (cfg.requiereEmpresa !== false) {
       _unsub.push(subscribe('empresa', pintar))
     } else {
@@ -39,7 +46,7 @@ export function crearModulo(cfg) {
   }
 
   async function montar(root) {
-    if (!root) return
+    if (!root || !root.isConnected) return
     const user    = get('user')
     const empresa = get('empresa')
     const puedeEscribir = user && user.rol !== 'CONSULTA'
@@ -77,29 +84,31 @@ export function crearModulo(cfg) {
     `
 
     if (puedeEscribir)
-      document.getElementById('crud-nuevo').addEventListener('click', () => abrirForm(null))
+      root.querySelector('#crud-nuevo').addEventListener('click', () => abrirForm(null))
     ;(cfg.botones || []).forEach((b, i) =>
-      document.getElementById(`crud-extra-${i}`)?.addEventListener('click', b.onClick))
+      root.querySelector(`#crud-extra-${i}`)?.addEventListener('click', b.onClick))
 
-    await cargar()
+    await cargar(root)
   }
 
-  async function cargar() {
-    const wrap    = document.getElementById('crud-tabla')
+  async function cargar(root) {
+    const wrap    = root.querySelector('#crud-tabla')
     const empresa = get('empresa')
-    if (!wrap) return
+    if (!wrap || !root.isConnected) return
     try {
       const eq = { activo: true }
       if (cfg.requiereEmpresa !== false && empresa) eq.empresaId = empresa.id
-      _items = await db.list(cfg.tabla, { eq, order: cfg.ordenPor || 'creadoEn', ascending: false })
-      pintarTabla()
+      const items = await db.list(cfg.tabla, { eq, order: cfg.ordenPor || 'creadoEn', ascending: false })
+      if (!root.isConnected) return
+      _items = items
+      pintarTabla(root)
     } catch (err) {
-      wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, `cargar ${cfg.tabla}`)}</div>`
+      if (root.isConnected) wrap.innerHTML = `<div class="alert alert-danger">${errorUsuario(err, `cargar ${cfg.tabla}`)}</div>`
     }
   }
 
-  function pintarTabla() {
-    const wrap = document.getElementById('crud-tabla')
+  function pintarTabla(root) {
+    const wrap = root.querySelector('#crud-tabla')
     const user = get('user')
     const puedeEscribir = user && user.rol !== 'CONSULTA'
     if (!wrap) return
@@ -245,7 +254,7 @@ export function crearModulo(cfg) {
       else      await db.insert(cfg.tabla, payload)
       toast.success(item ? 'Registro actualizado' : 'Registro creado')
       modal.close()
-      await cargar()
+      if (_root && _root.isConnected) await cargar(_root)
     } catch (err) {
       errEl.textContent = errorUsuario(err, `guardar ${cfg.tabla}`)
       errEl.classList.remove('hidden')
@@ -270,7 +279,7 @@ export function crearModulo(cfg) {
         await db.softDelete(cfg.tabla, item.id)
         toast.success('Registro eliminado')
         modal.close()
-        await cargar()
+        if (_root && _root.isConnected) await cargar(_root)
       } catch (err) {
         toast.error(errorUsuario(err, `eliminar ${cfg.tabla}`))
       }

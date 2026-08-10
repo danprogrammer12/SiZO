@@ -143,7 +143,8 @@ async function cargarEmpresas(user) {
       `<option value="">Vista general</option>` +
       empresas.map(em => `<option value="${esc(em.id)}">${esc(em.nombre)}</option>`).join('')
 
-    set('empresa', null)
+    const activa = get('empresa')
+    select.value = activa ? activa.id : ''
   } catch (err) {
     console.error('Error cargando empresas:', err)
   }

@@ -61,7 +61,36 @@ async function render(container) {
   document.getElementById('empresa-buscar').addEventListener('input', () => filtrar())
   document.getElementById('empresa-filtro-nivel').addEventListener('change', () => filtrar())
 
+  addStyles()
   await cargarEmpresas()
+}
+
+function addStyles() {
+  if (document.getElementById('empresas-styles')) return
+  const s = document.createElement('style')
+  s.id = 'empresas-styles'
+  s.textContent = `
+    .empresa-logo {
+      width: 32px; height: 32px; flex-shrink: 0;
+      border-radius: var(--radius-md);
+      background-color: var(--color-surface-2);
+      background-size: cover; background-position: center;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--font-size-sm); font-weight: var(--font-weight-bold);
+      color: var(--color-text-muted);
+    }
+    .logo-upload-preview {
+      width: 64px; height: 64px;
+      border-radius: var(--radius-md);
+      background-color: var(--color-surface-2);
+      background-size: cover; background-position: center;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--color-text-muted); font-size: var(--font-size-xs);
+      border: 1px dashed var(--color-border);
+      flex-shrink: 0;
+    }
+  `
+  document.head.appendChild(s)
 }
 
 let _empresas = []
@@ -137,8 +166,15 @@ function renderTabla(lista) {
             return `
               <tr data-id="${esc(em.id)}">
                 <td>
-                  <div style="font-weight:600">${esc(em.nombre)}</div>
-                  ${em.nombreCom ? `<div class="text-muted text-xs">${esc(em.nombreCom)}</div>` : ''}
+                  <div style="display:flex;align-items:center;gap:var(--space-2)">
+                    <div class="empresa-logo" data-logo-path="${esc(em.logoPath || '')}" data-id="${esc(em.id)}">
+                      ${esc((em.nombre || '?').charAt(0).toUpperCase())}
+                    </div>
+                    <div>
+                      <div style="font-weight:600">${esc(em.nombre)}</div>
+                      ${em.nombreCom ? `<div class="text-muted text-xs">${esc(em.nombreCom)}</div>` : ''}
+                    </div>
+                  </div>
                 </td>
                 <td class="text-sm">${esc(em.nit || '—')}</td>
                 <td class="text-sm">${esc(em.ciudad || '—')}</td>
@@ -174,6 +210,32 @@ function renderTabla(lista) {
       if (em) abrirFormulario(em)
     })
   })
+
+  cargarLogos(wrap)
+}
+
+async function cargarLogos(wrap) {
+  const nodos = [...wrap.querySelectorAll('.empresa-logo[data-logo-path]')]
+    .filter(n => n.dataset.logoPath)
+  await Promise.all(nodos.map(async nodo => {
+    const { data } = await supabase.storage.from('documentos').createSignedUrl(nodo.dataset.logoPath, 300)
+    if (data?.signedUrl) aplicarLogo(nodo, data.signedUrl)
+  }))
+}
+
+// El CDN de Storage falla intermitentemente (503) en peticiones desde el
+// navegador aunque el archivo exista — se precarga con Image() y se
+// reintenta una vez antes de resignarse a dejar la inicial de respaldo.
+function aplicarLogo(nodo, url, intento = 0) {
+  const img = new Image()
+  img.onload = () => {
+    nodo.style.backgroundImage = `url("${url}")`
+    nodo.textContent = ''
+  }
+  img.onerror = () => {
+    if (intento === 0) setTimeout(() => aplicarLogo(nodo, url, 1), 600)
+  }
+  img.src = url
 }
 
 // ── Formulario crear / editar ─────────────────────────────────
@@ -217,6 +279,14 @@ function abrirFormulario(empresa = null) {
       <div class="form-group">
         <label>Dirección</label>
         <input name="direccion" value="${esc(em.direccion || '')}" />
+      </div>
+      <div class="form-group">
+        <label>Logo / icono de la empresa</label>
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <div class="logo-upload-preview" id="logo-preview">Sin logo</div>
+          <input type="file" name="logo" id="logo-input" accept="image/png,image/jpeg,image/webp" />
+        </div>
+        <p class="text-xs text-muted" style="margin-top:var(--space-1)">PNG, JPG o WEBP — máx. 5 MB.</p>
       </div>
 
       <div class="divider"></div>
@@ -329,6 +399,35 @@ function abrirFormulario(empresa = null) {
 
   document.getElementById('btn-cancelar-empresa').addEventListener('click', () => modal.close())
   document.getElementById('btn-guardar-empresa').addEventListener('click', () => guardar(empresa))
+
+  const preview = document.getElementById('logo-preview')
+  document.getElementById('logo-input').addEventListener('change', e => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('El logo no puede superar 5 MB')
+      e.target.value = ''
+      return
+    }
+    preview.style.backgroundImage = `url("${URL.createObjectURL(file)}")`
+    preview.textContent = ''
+  })
+
+  if (em.logoPath) {
+    supabase.storage.from('documentos').createSignedUrl(em.logoPath, 300).then(({ data }) => {
+      if (data?.signedUrl) aplicarLogo(preview, data.signedUrl)
+    })
+  }
+}
+
+async function subirLogo(file, tenantId, empresaId) {
+  const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+  const path = `${tenantId}/logos/${empresaId}.${ext}`
+  const { error } = await supabase.storage
+    .from('documentos')
+    .upload(path, file, { contentType: file.type, upsert: true })
+  if (error) throw error
+  return path
 }
 
 async function guardar(empresaActual) {
@@ -412,12 +511,22 @@ async function guardar(empresaActual) {
     obs:            data.obs?.trim() || null,
   }
 
+  const logoFile = document.getElementById('logo-input')?.files[0] || null
+
   try {
+    let empresaId
     if (empresaActual) {
-      await db.update('empresas', empresaActual.id, payload)
+      empresaId = empresaActual.id
+      if (logoFile) payload.logoPath = await subirLogo(logoFile, user.tenantId, empresaId)
+      await db.update('empresas', empresaId, payload)
       toast.success(`Empresa "${payload.nombre}" actualizada`)
     } else {
-      await db.insert('empresas', { ...payload, activa: true, centros: [] })
+      const nueva = await db.insert('empresas', { ...payload, activa: true, centros: [] })
+      empresaId = nueva.id
+      if (logoFile) {
+        const logoPath = await subirLogo(logoFile, user.tenantId, empresaId)
+        await db.update('empresas', empresaId, { logoPath })
+      }
       toast.success(`Empresa "${payload.nombre}" creada`)
     }
 
