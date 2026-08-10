@@ -284,7 +284,10 @@ function abrirFormulario(empresa = null) {
         <label>Logo / icono de la empresa</label>
         <div style="display:flex;align-items:center;gap:var(--space-3)">
           <div class="logo-upload-preview" id="logo-preview">Sin logo</div>
-          <input type="file" name="logo" id="logo-input" accept="image/png,image/jpeg,image/webp" />
+          <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+            <input type="file" name="logo" id="logo-input" accept="image/png,image/jpeg,image/webp" />
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-quitar-logo" style="align-self:flex-start;display:none">Quitar logo</button>
+          </div>
         </div>
         <p class="text-xs text-muted" style="margin-top:var(--space-1)">PNG, JPG o WEBP — máx. 5 MB.</p>
       </div>
@@ -400,8 +403,16 @@ function abrirFormulario(empresa = null) {
   document.getElementById('btn-cancelar-empresa').addEventListener('click', () => modal.close())
   document.getElementById('btn-guardar-empresa').addEventListener('click', () => guardar(empresa))
 
-  const preview = document.getElementById('logo-preview')
-  document.getElementById('logo-input').addEventListener('change', e => {
+  const preview   = document.getElementById('logo-preview')
+  const logoInput = document.getElementById('logo-input')
+  const btnQuitar = document.getElementById('btn-quitar-logo')
+  _logoEliminado  = false
+
+  function mostrarBtnQuitar(mostrar) {
+    btnQuitar.style.display = mostrar ? '' : 'none'
+  }
+
+  logoInput.addEventListener('change', e => {
     const file = e.target.files[0]
     if (!file) return
     if (file.size > 5 * 1024 * 1024) {
@@ -409,16 +420,29 @@ function abrirFormulario(empresa = null) {
       e.target.value = ''
       return
     }
+    _logoEliminado = false
     preview.style.backgroundImage = `url("${URL.createObjectURL(file)}")`
     preview.textContent = ''
+    mostrarBtnQuitar(true)
+  })
+
+  btnQuitar.addEventListener('click', () => {
+    _logoEliminado = true
+    logoInput.value = ''
+    preview.style.backgroundImage = ''
+    preview.textContent = 'Sin logo'
+    mostrarBtnQuitar(false)
   })
 
   if (em.logoPath) {
+    mostrarBtnQuitar(true)
     supabase.storage.from('documentos').createSignedUrl(em.logoPath, 300).then(({ data }) => {
       if (data?.signedUrl) aplicarLogo(preview, data.signedUrl)
     })
   }
 }
+
+let _logoEliminado = false
 
 async function subirLogo(file, tenantId, empresaId) {
   const ext = (file.name.split('.').pop() || 'png').toLowerCase()
@@ -517,7 +541,12 @@ async function guardar(empresaActual) {
     let empresaId
     if (empresaActual) {
       empresaId = empresaActual.id
-      if (logoFile) payload.logoPath = await subirLogo(logoFile, user.tenantId, empresaId)
+      if (logoFile) {
+        payload.logoPath = await subirLogo(logoFile, user.tenantId, empresaId)
+      } else if (_logoEliminado && empresaActual.logoPath) {
+        await supabase.storage.from('documentos').remove([empresaActual.logoPath])
+        payload.logoPath = null
+      }
       await db.update('empresas', empresaId, payload)
       toast.success(`Empresa "${payload.nombre}" actualizada`)
     } else {
