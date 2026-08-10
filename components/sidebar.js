@@ -68,10 +68,66 @@ function render() {
 function renderNav() {
   const user = get('user')
   const esRoot = user && user.rol === 'ROOT'
-  return NAV_ITEMS.map(item => {
-    if (item.soloRoot && !esRoot) return ''
-    // ROOT no opera módulos de tenant — solo ve la sección "Plataforma"
-    if (!item.soloRoot && esRoot) return ''
+
+  if (esRoot) {
+    return NAV_ITEMS.map(item => {
+      if (item.soloRoot) {
+        if (item.divider) {
+          return `<div class="nav-divider"><span class="nav-divider-label">${item.label}</span></div>`
+        }
+        return `
+          <button class="nav-item" data-route="${item.route}">
+            <span class="nav-icon">${item.icon()}</span>
+            <span class="nav-label">${item.label}</span>
+          </button>`
+      }
+      return ''
+    }).join('')
+  }
+
+  const empresas = get('_empresas') || []
+  const activeEmp = get('empresa')
+  let html = ''
+
+  if (empresas.length > 0) {
+    html += `
+      <div class="nav-divider">
+        <span class="nav-divider-label">Empresas</span>
+      </div>
+      <button class="nav-item company-item ${!activeEmp ? 'active' : ''}" data-id="all" title="Vista General / Consolidado">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </span>
+        <span class="nav-label">Vista General</span>
+      </button>
+    `
+
+    html += empresas.map(emp => {
+      const activeClass = activeEmp && activeEmp.id === emp.id ? 'active' : ''
+      const initials = (emp.nombre || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+      return `
+        <button class="nav-item company-item ${activeClass}" data-id="${esc(emp.id)}" title="${esc(emp.nombre)}">
+          <span class="nav-icon">
+            <div class="company-circle-icon">${esc(initials)}</div>
+          </span>
+          <span class="nav-label">${esc(emp.nombre)}</span>
+        </button>
+      `
+    }).join('')
+  }
+
+  html += `
+    <div class="nav-divider">
+      <span class="nav-divider-label">Módulos</span>
+    </div>
+  `
+
+  html += NAV_ITEMS.map(item => {
+    if (item.soloRoot) return ''
     if (item.divider) {
       return `<div class="nav-divider">
         <span class="nav-divider-label">${item.label}</span>
@@ -84,6 +140,8 @@ function renderNav() {
         <span class="nav-label">${item.label}</span>
       </button>`
   }).join('')
+
+  return html
 }
 
 function bindEvents() {
@@ -97,7 +155,21 @@ function bindEvents() {
   document.getElementById('sidebar-nav').addEventListener('click', e => {
     const btn = e.target.closest('.nav-item')
     if (!btn) return
-    navigate(btn.dataset.route)
+
+    if (btn.classList.contains('company-item')) {
+      const id = btn.dataset.id
+      const empresas = get('_empresas') || []
+      if (id === 'all') {
+        set('empresa', null)
+      } else {
+        const emp = empresas.find(e => e.id === id)
+        if (emp) set('empresa', emp)
+      }
+      navigate('dashboard')
+    } else {
+      navigate(btn.dataset.route)
+    }
+
     // Cierra el drawer en mobile al navegar
     document.getElementById('sidebar').classList.remove('mobile-open')
     const overlay = document.getElementById('sidebar-overlay')
@@ -129,6 +201,27 @@ function syncUser() {
       <span class="sidebar-user-role">${esc(user.rol || '')}</span>
     `
   })
+
+  subscribe('_empresas', () => {
+    const navEl = document.getElementById('sidebar-nav')
+    if (navEl) navEl.innerHTML = renderNav()
+    
+    // Sincronizar clase activa
+    const activeEmp = get('empresa')
+    document.querySelectorAll('.company-item').forEach(el => {
+      const isAll = el.dataset.id === 'all'
+      const isActive = (!activeEmp && isAll) || (activeEmp && activeEmp.id === el.dataset.id)
+      el.classList.toggle('active', isActive)
+    })
+  })
+
+  subscribe('empresa', activeEmp => {
+    document.querySelectorAll('.company-item').forEach(el => {
+      const isAll = el.dataset.id === 'all'
+      const isActive = (!activeEmp && isAll) || (activeEmp && activeEmp.id === el.dataset.id)
+      el.classList.toggle('active', isActive)
+    })
+  })
 }
 
 function addStyles() {
@@ -152,7 +245,15 @@ function addStyles() {
       letter-spacing: -0.02em;
       white-space: nowrap;
     }
-    .sidebar-logo-dot { color: var(--color-brand); }
+    .sidebar-logo-dot {
+      color: var(--color-brand);
+      animation: pulse-glow 2s infinite ease-in-out;
+      display: inline-block;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 1px var(--color-brand)); }
+      50% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-brand)); }
+    }
     .sidebar-collapse-btn {
       color: var(--sidebar-text);
       padding: 6px;
@@ -183,12 +284,25 @@ function addStyles() {
       color: var(--sidebar-text);
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
-      transition: all var(--transition-fast);
+      transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
       white-space: nowrap;
       text-align: left;
     }
-    .nav-item:hover { background: var(--sidebar-surface); color: var(--sidebar-text-active); }
-    .nav-item.active { background: var(--color-brand); color: #fff; }
+    .nav-item:hover {
+      background: var(--sidebar-surface);
+      color: var(--sidebar-text-active);
+      transform: translateX(4px);
+    }
+    .nav-item:active {
+      transform: translateX(2px) scale(0.98);
+    }
+    .nav-item.active {
+      background: var(--color-brand);
+      color: #fff;
+    }
+    .nav-item.active:hover {
+      transform: none;
+    }
 
     .nav-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 20px; }
     .nav-label { overflow: hidden; transition: opacity var(--transition-slow), width var(--transition-slow); }
@@ -270,6 +384,32 @@ function addStyles() {
     }
     .sidebar-logout:hover { color: var(--color-danger); background: #450A0A; }
     .sidebar.collapsed .sidebar-logout { display: none; }
+
+    .company-circle-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--sidebar-border);
+      color: var(--sidebar-text-active);
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      border: 1px solid var(--sidebar-border);
+      transition: all var(--transition-fast);
+    }
+    .nav-item:hover .company-circle-icon {
+      background: var(--sidebar-text-active);
+      color: var(--sidebar-bg);
+      border-color: var(--sidebar-text-active);
+    }
+    .nav-item.active .company-circle-icon {
+      background: #ffffff;
+      color: var(--color-brand);
+      border-color: #ffffff;
+    }
   `
   document.head.appendChild(style)
 }

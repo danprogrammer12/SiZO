@@ -77,7 +77,18 @@ async function pintarConsolidado(root) {
   if (empresas.length === 0) {
     document.getElementById('dash-consolidado').innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">🏢</div>
+        <div class="empty-state-icon flex items-center justify-center" style="margin-bottom: var(--space-4)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6">
+            <rect x="2" y="2" width="20" height="20" rx="2" ry="2"/>
+            <path d="M9 22V12h6v10"/>
+            <path d="M8 6h.01"/>
+            <path d="M16 6h.01"/>
+            <path d="M8 10h.01"/>
+            <path d="M16 10h.01"/>
+            <path d="M12 6h.01"/>
+            <path d="M12 10h.01"/>
+          </svg>
+        </div>
         <h3 class="empty-state-title">Sin empresas asignadas</h3>
         <p class="text-muted">
           ${user?.rol === 'ADMIN'
@@ -395,8 +406,17 @@ function renderAlertas(empresa, seg) {
     const dias = Math.ceil((new Date(empresa.contratoFin) - Date.now()) / 864e5)
     if (dias >= 0 && dias <= 30) alertas.push(['warn', `Contrato vence en ${dias} día(s)`])
   }
-  if (!alertas.length) return '<p class="text-muted text-sm">Sin alertas activas ✓</p>'
-  const icono = { crit: '🔴', warn: '🟠', info: '🔵' }
+  if (!alertas.length) {
+    return `<div style="display:flex;align-items:center;gap:var(--space-2);color:var(--color-success)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span class="text-sm">Sin alertas activas ✓</span>
+    </div>`
+  }
+  const icono = {
+    crit: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+    warn: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+    info: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+  }
   return alertas.map(([t, msg]) =>
     `<div class="dash-alerta"><span>${icono[t]}</span><span>${msg}</span></div>`
   ).join('')
