@@ -115,6 +115,10 @@ function syncPeriodo() {
           </svg>`
     }
   })
+  subscribe('empresa', emp => {
+    const select = document.getElementById('topbar-empresa')
+    if (select) select.value = emp ? emp.id : ''
+  })
 }
 
 async function cargarEmpresas(user) {

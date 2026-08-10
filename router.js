@@ -83,7 +83,7 @@ async function navigate(ruta) {
   }
 
   // Actualiza nav activo en sidebar
-  document.querySelectorAll('.nav-item').forEach(el => {
+  document.querySelectorAll('.nav-item:not(.company-item)').forEach(el => {
     el.classList.toggle('active', el.dataset.route === ruta)
   })
 }
