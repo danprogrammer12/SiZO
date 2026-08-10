@@ -1,0 +1,124 @@
+/* ============================================================
+   SIZO — Login Screen Styles (Theme-aware & Premium)
+   ============================================================ */
+
+#auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+  padding: var(--space-6);
+  transition: background var(--transition-slow);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-bounce), box-shadow var(--transition-base), background-color var(--transition-base), border-color var(--transition-base);
+}
+
+.login-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.logo-text {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.logo-dot {
+  color: var(--color-brand);
+  animation: pulse-glow 2s infinite ease-in-out;
+  display: inline-block;
+}
+
+.login-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin-bottom: var(--space-2);
+}
+
+.login-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.login-form .form-group label {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.login-form input {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+  height: 42px;
+  font-size: var(--font-size-sm);
+  padding: 0 var(--space-3) 0 var(--space-8); /* Padding left accommodates icon */
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.login-form input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-muted);
+}
+
+.login-form input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.login-footer {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Dark Mode Overrides */
+.dark #auth-screen {
+  background: linear-gradient(135deg, #090D16 0%, #121826 100%);
+}
+
+.dark .login-card {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.dark .logo-text,
+.dark .login-title {
+  color: var(--color-text-primary);
+}
+
+.dark .login-subtitle,
+.dark .login-form .form-group label {
+  color: var(--color-text-secondary);
+}
+
+.dark .login-form input {
+  background-color: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+.dark .login-form input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-muted);
+}

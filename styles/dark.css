@@ -4,61 +4,63 @@
    ============================================================ */
 
 .dark {
-  --color-brand:        #3B82F6;
-  --color-brand-dark:   #2563EB;
-  --color-brand-light:  #60A5FA;
-  --color-brand-muted:  #1E3A5F;
+  --color-brand:        #6366F1; /* Indigo-500 */
+  --color-brand-dark:   #4F46E5; /* Indigo-600 */
+  --color-brand-light:  #818CF8; /* Indigo-400 */
+  --color-brand-muted:  rgba(99, 102, 241, 0.15);
 
-  --color-bg:           #0F172A;
-  --color-surface:      #1E293B;
-  --color-surface-2:    #334155;
-  --color-border:       #334155;
-  --color-border-soft:  #1E293B;
+  --color-bg:           #0B0F19; /* Premium Dark Navy */
+  --color-surface:      #121826;
+  --color-surface-2:    #1E2536;
+  --color-border:       #232B3E;
+  --color-border-soft:  #182030;
 
   --color-text-primary:   #F8FAFC;
   --color-text-secondary: #CBD5E1;
   --color-text-muted:     #64748B;
-  --color-text-inverse:   #0F172A;
+  --color-text-inverse:   #FFFFFF;
 
-  --color-success-muted:  #14532D;
-  --color-warning-muted:  #451A03;
-  --color-danger-muted:   #450A0A;
-  --color-info-muted:     #083344;
+  --color-success-muted:  rgba(16, 185, 129, 0.15);
+  --color-warning-muted:  rgba(245, 158, 11, 0.15);
+  --color-danger-muted:   rgba(239, 68, 68, 0.15);
+  --color-info-muted:     rgba(59, 130, 246, 0.15);
 
   /* Topbar en dark */
-  --topbar-bg:     #1E293B;
-  --topbar-border: #334155;
+  --topbar-bg:     #121826;
+  --topbar-border: #232B3E;
 }
 
 /* Sidebar siempre dark — no cambia */
 
 /* ── Semáforo pills ── */
-.dark .semaforo-pill.verde    { background-color: #14532D; color: #86EFAC; }
-.dark .semaforo-pill.amarillo { background-color: #451A03; color: #FCD34D; }
-.dark .semaforo-pill.naranja  { background-color: #431407; color: #FB923C; }
-.dark .semaforo-pill.rojo     { background-color: #450A0A; color: #FCA5A5; }
+.dark .semaforo-pill.verde    { background-color: rgba(16, 185, 129, 0.15); color: #34D399; }
+.dark .semaforo-pill.amarillo { background-color: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+.dark .semaforo-pill.naranja  { background-color: rgba(249, 115, 22, 0.15); color: #FB923C; }
+.dark .semaforo-pill.rojo     { background-color: rgba(239, 68, 68, 0.15); color: #F87171; }
 
 /* ── Badges de estado ── */
-.dark .badge-success { background-color: #14532D; color: #86EFAC; }
-.dark .badge-warning { background-color: #451A03; color: #FCD34D; }
-.dark .badge-danger  { background-color: #450A0A; color: #FCA5A5; }
-.dark .badge-info    { background-color: #083344; color: #67E8F9; }
+.dark .badge-brand   { background-color: rgba(99, 102, 241, 0.15); color: #818CF8; }
+.dark .badge-success { background-color: rgba(16, 185, 129, 0.15); color: #34D399; }
+.dark .badge-warning { background-color: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+.dark .badge-danger  { background-color: rgba(239, 68, 68, 0.15); color: #F87171; }
+.dark .badge-info    { background-color: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+.dark .badge-neutral { background-color: var(--color-surface-2); color: var(--color-text-secondary); }
 
 /* ── Alertas ── */
-.dark .alert-success { background-color: #14532D; border-color: #166534; color: #86EFAC; }
-.dark .alert-warning { background-color: #451A03; border-color: #78350F; color: #FCD34D; }
-.dark .alert-danger  { background-color: #450A0A; border-color: #7F1D1D; color: #FCA5A5; }
-.dark .alert-info    { background-color: #083344; border-color: #0E7490; color: #67E8F9; }
+.dark .alert-success { background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #34D399; }
+.dark .alert-warning { background-color: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+.dark .alert-danger  { background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #F87171; }
+.dark .alert-info    { background-color: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: #60A5FA; }
 
 /* ── Toasts ── */
-.dark .toast-success { background: #14532D; color: #86EFAC; border-color: #166534; }
-.dark .toast-error   { background: #450A0A; color: #FCA5A5; border-color: #7F1D1D; }
-.dark .toast-warning { background: #451A03; color: #FCD34D; border-color: #78350F; }
-.dark .toast-info    { background: #083344; color: #67E8F9; border-color: #0E7490; }
+.dark .toast-success { background: #121826; color: #34D399; border-color: rgba(16, 185, 129, 0.3); }
+.dark .toast-error   { background: #121826; color: #F87171; border-color: rgba(239, 68, 68, 0.3); }
+.dark .toast-warning { background: #121826; color: #FBBF24; border-color: rgba(245, 158, 11, 0.3); }
+.dark .toast-info    { background: #121826; color: #60A5FA; border-color: rgba(59, 130, 246, 0.3); }
 
 /* ── Tablas ── */
-.dark .data-table th              { background-color: #1E293B; color: var(--color-text-secondary); }
-.dark .data-table tbody tr:hover td { background-color: #334155; }
+.dark .data-table th              { background-color: var(--color-surface-2); color: var(--color-text-secondary); }
+.dark .data-table tbody tr:hover td { background-color: var(--color-border-soft); }
 
 /* ── Formularios ── */
 .dark input,
@@ -88,7 +90,7 @@
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }
-.dark .btn-secondary:hover:not(:disabled) { background-color: #475569; }
+.dark .btn-secondary:hover:not(:disabled) { background-color: var(--color-border); }
 .dark .btn-ghost { color: var(--color-text-secondary); }
 .dark .btn-ghost:hover:not(:disabled) {
   background-color: var(--color-surface-2);
@@ -102,7 +104,7 @@
 
 /* ── Auth / Login ── */
 .dark #auth-screen {
-  background: linear-gradient(135deg, #020617 0%, #0F172A 100%);
+  background: linear-gradient(135deg, #090D16 0%, #121826 100%);
 }
 
 /* ── Empty states y misceláneos ── */

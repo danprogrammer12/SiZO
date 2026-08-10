@@ -57,7 +57,7 @@ Jerarquía (2026-08-03): `ROOT → ADMIN → ASESOR → CONSULTA`.
 
 **Frontend:** `router.js` redirige a ROOT de `dashboard` a `superadmin` (ROOT no tiene `tenant_id`/`empresa`, las rutas operativas no le sirven). `components/sidebar.js` oculta todos los ítems de tenant para ROOT y solo muestra la sección "Plataforma" (`modules/superadmin.js`, ahora con gestión de tenants, usuarios cross-tenant y auditoría, además del billing que ya tenía).
 
-**Pendiente de ejecutar en producción:** la primera cuenta ROOT (separada de tu cuenta ADMIN de Webcore, que sigue intacta) aún no existe — `crear-usuario` exige que quien llama YA sea ROOT, así que la primera cuenta no puede crearse desde el front. Usar `SIZO_ROOT_EMAIL=... node scripts/provision-root.mjs` (mismo patrón que `provision-admin.mjs`, con `service_role`) una sola vez.
+**Cuenta ROOT provisionada (2026-08-05):** `root@webcoresolutions.co`, uid `3da1b741-5a62-4309-8747-b4e560756a7f`, `app_metadata = { role: "ROOT" }` sin tenant. Creada vía `scripts/provision-root.mjs`. Falta establecer contraseña (usar el link de recuperación generado por Supabase Auth o reenviarlo desde el dashboard). La cuenta ADMIN de pruebas (`danias12.dpa@gmail.com`) quedó intacta, sin tocar.
 
 ---
 
@@ -151,7 +151,7 @@ Resultado actual: **24 PASS · 0 FAIL** (unit + mecánica) · **7 PASS · 0 FAIL
 | `011_fix_cache_rls_documentos.sql` | Intento 3 (envuelve `is_admin()`/`tenant_id()`/`user_role()` en `(select ...)`, mismo motivo que H10). Tampoco resolvió — probado con `check=true` confirmado en transacción atómica justo antes del UPDATE fallido. | ✅ aplicada 2026-07-16, no resolvió |
 | `012_rpc_soft_delete_documento.sql` | Workaround real: función `soft_delete_documento(uuid)` `SECURITY DEFINER` — valida permisos en PL/pgSQL y actualiza como dueño de tabla, evitando el UPDATE directo vía RLS que queda sin explicación (ver notas 2026-07-16 abajo). `gestor-documental.js` usa `supabase.rpc('soft_delete_documento', ...)` en vez de `db.softDelete`. | ✅ aplicada — verificada 2026-08-03 vía llamada RPC directa (devolvió el error esperado "Documento no encontrado", confirmando que la función existe en la base) |
 | `013_rpc_soft_delete_general.sql` | Replica el patrón de 012 para `matriz_riesgos` y `actas` (`soft_delete_matriz_riesgos`, `soft_delete_acta`), mismo bloqueo RLS sin explicación raíz en esas tablas. | ✅ aplicada — verificada 2026-08-03 vía llamada RPC directa a ambas funciones |
-| `014_rol_root.sql` | Incorpora el rol `ROOT` (plataforma, sin tenant): helper `is_root()`, `is_superadmin()` acepta también `is_root()` (transición), `usuarios.rol` admite `'ROOT'` (aunque hoy no se inserta ninguna fila con ese rol), policy `tenants: root crea`, una policy SELECT `"<tabla>: root lee todo"` por cada una de las ~18 tablas del esquema, y tabla nueva `plataforma_auditoria` (solo legible por ROOT, solo se escribe desde Edge Functions con `service_role`). | ⏳ pendiente de aplicar |
+| `014_rol_root.sql` | Incorpora el rol `ROOT` (plataforma, sin tenant): helper `is_root()`, `is_superadmin()` acepta también `is_root()` (transición), `usuarios.rol` admite `'ROOT'` (aunque hoy no se inserta ninguna fila con ese rol), policy `tenants: root crea`, una policy SELECT `"<tabla>: root lee todo"` por cada una de las ~18 tablas del esquema, y tabla nueva `plataforma_auditoria` (solo legible por ROOT, solo se escribe desde Edge Functions con `service_role`). | ✅ aplicada — verificada 2026-08-05 vía SQL Editor (20 policies "root lee todo", constraint y tabla `plataforma_auditoria` presentes) |
 
 ---
 
