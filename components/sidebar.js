@@ -152,7 +152,15 @@ function addStyles() {
       letter-spacing: -0.02em;
       white-space: nowrap;
     }
-    .sidebar-logo-dot { color: var(--color-brand); }
+    .sidebar-logo-dot {
+      color: var(--color-brand);
+      animation: pulse-glow 2s infinite ease-in-out;
+      display: inline-block;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 1px var(--color-brand)); }
+      50% { opacity: 1; filter: drop-shadow(0 0 5px var(--color-brand)); }
+    }
     .sidebar-collapse-btn {
       color: var(--sidebar-text);
       padding: 6px;
@@ -183,12 +191,25 @@ function addStyles() {
       color: var(--sidebar-text);
       font-size: var(--font-size-sm);
       font-weight: var(--font-weight-medium);
-      transition: all var(--transition-fast);
+      transition: transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
       white-space: nowrap;
       text-align: left;
     }
-    .nav-item:hover { background: var(--sidebar-surface); color: var(--sidebar-text-active); }
-    .nav-item.active { background: var(--color-brand); color: #fff; }
+    .nav-item:hover {
+      background: var(--sidebar-surface);
+      color: var(--sidebar-text-active);
+      transform: translateX(4px);
+    }
+    .nav-item:active {
+      transform: translateX(2px) scale(0.98);
+    }
+    .nav-item.active {
+      background: var(--color-brand);
+      color: #fff;
+    }
+    .nav-item.active:hover {
+      transform: none;
+    }
 
     .nav-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 20px; }
     .nav-label { overflow: hidden; transition: opacity var(--transition-slow), width var(--transition-slow); }

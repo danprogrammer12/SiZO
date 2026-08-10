@@ -5,15 +5,15 @@
 
 :root {
   /* --- Colores de marca --- */
-  --color-brand:        #2563EB;
-  --color-brand-dark:   #1D4ED8;
-  --color-brand-light:  #3B82F6;
-  --color-brand-muted:  #DBEAFE;
+  --color-brand:        #4F46E5; /* Indigo-600 */
+  --color-brand-dark:   #4338CA; /* Indigo-700 */
+  --color-brand-light:  #6366F1; /* Indigo-500 */
+  --color-brand-muted:  #EEF2FF; /* Indigo-50 */
 
   --color-navy:         #0F172A;
   --color-navy-soft:    #1E293B;
-  --color-teal:         #06B6D4;
-  --color-teal-muted:   #CFFAFE;
+  --color-teal:         #0D9488; /* Teal-600 */
+  --color-teal-muted:   #F0FDFA; /* Teal-50 */
 
   /* --- Neutros --- */
   --color-bg:           #F8FAFC;
@@ -26,31 +26,31 @@
   --color-text-primary:   #0F172A;
   --color-text-secondary: #475569;
   --color-text-muted:     #94A3B8;
-  --color-text-inverse:   #F8FAFC;
+  --color-text-inverse:   #FFFFFF;
 
   /* --- Semáforo / estados --- */
-  --color-success:        #22C55E;
-  --color-success-muted:  #DCFCE7;
-  --color-warning:        #F59E0B;
+  --color-success:        #10B981; /* Emerald-500 */
+  --color-success-muted:  #ECFDF5;
+  --color-warning:        #F59E0B; /* Amber-500 */
   --color-warning-muted:  #FEF3C7;
-  --color-danger:         #EF4444;
-  --color-danger-muted:   #FEE2E2;
-  --color-info:           #06B6D4;
-  --color-info-muted:     #CFFAFE;
+  --color-danger:         #EF4444; /* Red-500 */
+  --color-danger-muted:   #FEF2F2;
+  --color-info:           #3B82F6; /* Blue-500 */
+  --color-info-muted:     #EFF6FF;
 
   /* --- Semaforización específica SG-SST --- */
-  --semaforo-verde:       #22C55E;   /* cumplimiento ≥ 85% */
+  --semaforo-verde:       #10B981;   /* cumplimiento ≥ 85% */
   --semaforo-amarillo:    #F59E0B;   /* cumplimiento 61–84% */
   --semaforo-naranja:     #F97316;   /* cumplimiento 41–60% */
   --semaforo-rojo:        #EF4444;   /* cumplimiento ≤ 40% */
 
   /* --- Sidebar (siempre dark) --- */
-  --sidebar-bg:           #0F172A;
-  --sidebar-surface:      #1E293B;
-  --sidebar-border:       #334155;
-  --sidebar-text:         #CBD5E1;
+  --sidebar-bg:           #0B0F19; /* matches dark mode background for sleek contrast */
+  --sidebar-surface:      #182030;
+  --sidebar-border:       #232B3E;
+  --sidebar-text:         #94A3B8;
   --sidebar-text-active:  #F8FAFC;
-  --sidebar-accent:       #2563EB;
+  --sidebar-accent:       var(--color-brand);
   --sidebar-width:        240px;
   --sidebar-width-collapsed: 64px;
 
@@ -107,9 +107,10 @@
   --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   /* --- Transiciones --- */
-  --transition-fast:   150ms ease;
-  --transition-base:   200ms ease;
-  --transition-slow:   300ms ease;
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:   200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* --- Z-index --- */
   --z-sidebar:  100;
